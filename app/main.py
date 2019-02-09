@@ -1,10 +1,17 @@
 from fastapi import FastAPI
 
-app = FastAPI(title="DECIDIM Pilot connector",
-              description="Mission: connect DDDC to Chainspace",
-              version="0.0.1",)
+from app.config.config import BaseConfig
+
+config = BaseConfig()
+conf = config.values
+log = config.logger
+
+api = FastAPI(title="DDDC Credential Issuer",
+              description="Credential Issuer for DDDC project",
+              version="0.1.0")
 
 
-@app.get("/")
+@api.get("/")
 def root():
-    return {"message": "Hello World"}
+    log.info(conf['main']['keypath'])
+    return {"message": "Hello World", "config": conf['main']['keypath']}

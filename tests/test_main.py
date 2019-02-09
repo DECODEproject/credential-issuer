@@ -1,8 +1,8 @@
 from starlette.testclient import TestClient
-from app.main import app
+from app.main import api
 
 
 def test_home():
-    client = TestClient(app)
+    client = TestClient(api)
     r = client.get('/')
     assert r.status_code == 200
