@@ -1,16 +1,19 @@
 <h1 align="center">
   <br>
         <a href="https://decodeproject.eu/">
-                <img src="https://decodeproject.eu/sites/all/themes/marmelo_base/img/logo.svg" width="150" alt="dddc-credential-issuer">
+                <img src="https://decodeproject.eu/sites/all/themes/marmelo_base/img/logo.svg" width="300" alt="dddc-credential-issuer">
         </a>
   <br>
   DDDC Credential Issuer API
   <br>
 </h1>
 
+
 | Restful API for the Credential issuer of the Digital Democracy and Data Commons pilot project |
 :---:
 | [![Build Status](https://travis-ci.com/DECODEproject/dddc-credential-issuer.svg?branch=master)](https://travis-ci.com/DECODEproject/dddc-credential-issuer) [![Dyne.org](https://img.shields.io/badge/%3C%2F%3E%20with%20%E2%9D%A4%20by-Dyne.org-blue.svg)](https://dyne.org) |
+
+<br><br>
 
 Credential issuer API is part of the DDDC.
 Digital Democracy and Data Commons is a pilot participatory process oriented to test a new technology to improve the 
@@ -51,6 +54,7 @@ using algorithms that can be deployed in any situation without any change.
 Head your browser to:
 
 **SWAGGER UI**: http://127.0.0.1/docs/
+
 **API**: http://127.0.0.1/ 
 
 
@@ -80,7 +84,7 @@ All the options are documented on [here](https://github.com/tiangolo/uvicorn-gun
 ## :wrench: Configuration
 
 All the configuration should be available under an .ini file.
-By default the configuration file is (config.ini)[app/config.ini]
+By default the configuration file is [config.ini](app/config.ini)
 
 ### User defined config.ini
 Define a environment variable **DDDC_CREDENTIAL_ISSUER_CONFIGFILE** with the absolute path of the file like:
@@ -122,7 +126,9 @@ This project is receiving funding from the European Union’s Horizon 2020 resea
 ## :globe_with_meridians: Links
 
 https://decodeproject.eu/
+
 https://dyne.org/
+
 https://dddc.decodeproject.eu/
 
 
