@@ -10,7 +10,7 @@
 
 | Restful API for the Credential issuer of the Digital Democracy and Data Commons pilot project |
 :---:
-| [![Build Status](https://travis-ci.org/DECODEproject/dddc-credential-issuer.svg?branch=master)](https://travis-ci.org/puria/ksweb) [![Dyne.org](https://img.shields.io/badge/%3C%2F%3E%20with%20%E2%9D%A4%20by-Dyne.org-blue.svg)](https://dyne.org) |
+| [![Build Status](https://travis-ci.org/DECODEproject/dddc-credential-issuer.svg?branch=master)](https://travis-ci.org/DECODEproject/dddc-credential-issuer) [![Dyne.org](https://img.shields.io/badge/%3C%2F%3E%20with%20%E2%9D%A4%20by-Dyne.org-blue.svg)](https://dyne.org) |
 
 Credential issuer API is part of the DDDC.
 Digital Democracy and Data Commons is a pilot participatory process oriented to test a new technology to improve the 
