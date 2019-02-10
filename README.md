@@ -11,7 +11,7 @@
 
 | Restful API for the Credential issuer of the Digital Democracy and Data Commons pilot project |
 :---:
-| [![Build Status](https://travis-ci.com/DECODEproject/dddc-credential-issuer.svg?branch=master)](https://travis-ci.com/DECODEproject/dddc-credential-issuer) [![Dyne.org](https://img.shields.io/badge/%3C%2F%3E%20with%20%E2%9D%A4%20by-Dyne.org-blue.svg)](https://dyne.org) |
+| [![Build Status](https://travis-ci.com/DECODEproject/dddc-credential-issuer.svg?branch=master)](https://travis-ci.com/DECODEproject/dddc-credential-issuer) [![codecov](https://codecov.io/gh/DECODEproject/dddc-credential-issuer/branch/master/graph/badge.svg)](https://codecov.io/gh/DECODEproject/dddc-credential-issuer) [![Dyne.org](https://img.shields.io/badge/%3C%2F%3E%20with%20%E2%9D%A4%20by-Dyne.org-blue.svg)](https://dyne.org) |
 
 <br><br>
 
