@@ -2,6 +2,9 @@ language: python
 python:
     - "3.7-dev"
     - "3.6"
+before_install:
+    - sudo apt-get update
+    - sudo apt-get install -y libpython3.6-dev
 install:
     - pip install -e .
     - pip install codecov
