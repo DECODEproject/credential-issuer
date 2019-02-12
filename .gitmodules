@@ -1,0 +1,3 @@
+[submodule "app/contracts"]
+	path = app/contracts
+	url = https://github.com/DECODEproject/dddc-pilot-contracts
