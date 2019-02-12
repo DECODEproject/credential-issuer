@@ -37,7 +37,7 @@ def test_generate_secret_key():
 def remove_secret():
     environ[
         "DDDC_CREDENTIAL_ISSUER_CONFIGFILE"
-    ] = "/home/travis/DECODEproject/dddc-credential-issuer/app/test.ini"
+    ] = "/home/travis/build/DECODEproject/dddc-credential-issuer/app/test.ini"
     bc = BaseConfig()
     secret = Path(bc.get("keypair"))
     if secret.is_file():
