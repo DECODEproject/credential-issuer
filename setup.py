@@ -12,5 +12,5 @@ setup(
         "zenroom==0.0.5",
         "pre-commit",
     ],
-    tests_require=["pytest-env", "pytest", "codecov", "requests", "pytest-cov"],
+    tests_require=["pytest", "codecov", "requests", "pytest-cov"],
 )
