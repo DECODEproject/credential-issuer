@@ -7,14 +7,10 @@ setup(
     author_email="puria@dyne.org",
     packages=find_packages(),
     install_requires=[
-        "fastapi",
+        "fastapi==0.2.0",
         "pytest_runner",
-        "zenroom"
+        "zenroom==0.0.5",
+        "pre-commit",
     ],
-    tests_require=[
-        "pytest",
-        "codecov",
-        "requests",
-        "pytest-cov",
-    ],
+    tests_require=["pytest-env", "pytest", "codecov", "requests", "pytest-cov"],
 )
