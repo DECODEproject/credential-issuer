@@ -11,6 +11,8 @@ setup(
         "pytest_runner",
         "zenroom==0.0.5",
         "pre-commit",
+        "python-multipart",
+        "pyjwt",
     ],
     tests_require=["pytest", "codecov", "requests", "pytest-cov"],
 )

@@ -36,3 +36,6 @@ class BaseConfig(object):
 
     def get(self, name):
         return self.values.get("DEFAULT", name)
+
+    def getint(self, name):
+        return self.values.getint("DEFAULT", name)

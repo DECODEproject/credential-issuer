@@ -6,7 +6,15 @@ import pytest
 from starlette.testclient import TestClient
 
 from app.config.config import BaseConfig
-from app.main import api, _generate_secret_key, _load_keypair
+from app.main import api, generate_secret_key, load_keypair
+
+
+def auth():
+    client = TestClient(api)
+    r = client.post(
+        "/token", data=dict(username="demo", password="demo", grant_type="password")
+    )
+    return json.loads(r.content)["access_token"]
 
 
 def test_home():
@@ -15,9 +23,28 @@ def test_home():
     assert r.status_code == 200
 
 
-def test_verification_key():
+def test_token():
     client = TestClient(api)
-    r = client.get("/verification_key")
+    r = client.post(
+        "/token", data=dict(username="demo", password="demo", grant_type="password")
+    )
+    result = json.loads(r.content)
+    assert result["access_token"], result
+    assert result["token_type"] == "bearer"
+
+
+def test_wrong_auth():
+    client = TestClient(api)
+    r = client.post(
+        "/token", data=dict(username="fake", password="fake", grant_type="password")
+    )
+    assert r.status_code == 400
+
+
+def test_verification_key():
+    token = auth()
+    client = TestClient(api)
+    r = client.get("/verification_key", headers={"Authorization": "Bearer %s" % token})
     result = json.loads(r.content)
     assert r.status_code == 200
     assert result["ci_unique_id"]["verify"]
@@ -27,7 +54,7 @@ def test_verification_key():
 
 
 def test_generate_secret_key():
-    key = json.loads(_generate_secret_key())
+    key = json.loads(generate_secret_key())
     keys = ["encoding", "zenroom", "sign", "schema", "curve"]
     for _ in keys:
         assert key["ci_unique_id"][_]
@@ -47,5 +74,5 @@ def remove_secret():
 def test_secret_key_creation(remove_secret):
     c = BaseConfig()
     assert not Path(c.get("keypair")).is_file()
-    _load_keypair()
+    load_keypair()
     assert Path(c.get("keypair")).is_file()
