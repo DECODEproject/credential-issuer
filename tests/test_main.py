@@ -1,12 +1,17 @@
 import json
+import random
+import string
 from os import environ
 from pathlib import Path
 
 import pytest
+from starlette.status import HTTP_204_NO_CONTENT
 from starlette.testclient import TestClient
 
 from app.config.config import BaseConfig
+from app.database import engine
 from app.main import api, generate_secret_key, load_keypair
+from app.models import AuthorizableAttribute, init_models
 
 
 def auth():
@@ -14,13 +19,14 @@ def auth():
     r = client.post(
         "/token", data=dict(username="demo", password="demo", grant_type="password")
     )
-    return json.loads(r.content)["access_token"]
+    return r.json()["access_token"]
 
 
-def test_home():
+def test_call():
     client = TestClient(api)
-    r = client.get("/")
+    r = client.get("/test")
     assert r.status_code == 200
+    assert r.content.decode() == '"OK"'
 
 
 def test_token():
@@ -28,9 +34,8 @@ def test_token():
     r = client.post(
         "/token", data=dict(username="demo", password="demo", grant_type="password")
     )
-    result = json.loads(r.content)
-    assert result["access_token"], result
-    assert result["token_type"] == "bearer"
+    assert r.json()["access_token"]
+    assert r.json()["token_type"] == "bearer"
 
 
 def test_wrong_auth():
@@ -76,3 +81,59 @@ def test_secret_key_creation(remove_secret):
     assert not Path(c.get("keypair")).is_file()
     load_keypair()
     assert Path(c.get("keypair")).is_file()
+
+
+def test_uid():
+    client = TestClient(api)
+    config = BaseConfig()
+    r = client.get("/uid", headers={"Authorization": "Bearer %s" % auth()})
+    assert r.json()["credential_issuer_id"]
+    assert r.json()["credential_issuer_id"] == config.get("uid")
+
+
+def test_authorizable_attribute():
+    init_models(engine)
+    client = TestClient(api)
+    aaid = "".join(random.choice(string.ascii_lowercase) for i in range(10))
+    r = client.post(
+        "/authorizable_attribute",
+        json={
+            "authorizable_attribute_id": aaid,
+            "authorizable_attribute_info": [{"super_long_key": "miao"}],
+        },
+        headers={"Authorization": "Bearer %s" % auth()},
+    )
+    attrib = AuthorizableAttribute.by_aa_id(aaid)
+    assert attrib
+    assert attrib.authorizable_attribute_id == aaid
+    assert r.json()["credential_issuer_id"] == "Credential Issuer 01"
+    assert "super_long_key" in attrib.authorizable_attribute_info
+
+
+def test_get_authorizable_attribute():
+    init_models(engine)
+    client = TestClient(api)
+    aaid = "".join(random.choice(string.ascii_lowercase) for i in range(10))
+    client.post(
+        "/authorizable_attribute",
+        json={
+            "authorizable_attribute_id": aaid,
+            "authorizable_attribute_info": [{"super_long_key": "miao"}],
+        },
+        headers={"Authorization": "Bearer %s" % auth()},
+    )
+    r = client.get(
+        "/authorizable_attribute/%s" % aaid,
+        headers={"Authorization": "Bearer %s" % auth()},
+    )
+    assert r.json()["authorizable_attribute_id"] == aaid
+
+
+def test_fake_get_authorizable_attribute():
+    aaid = "".join(random.choice(string.ascii_lowercase) for i in range(10))
+    client = TestClient(api)
+    r = client.get(
+        "/authorizable_attribute/%s" % aaid,
+        headers={"Authorization": "Bearer %s" % auth()},
+    )
+    assert r.status_code == HTTP_204_NO_CONTENT

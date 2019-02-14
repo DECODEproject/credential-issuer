@@ -7,12 +7,13 @@ setup(
     author_email="puria@dyne.org",
     packages=find_packages(),
     install_requires=[
-        "fastapi==0.2.0",
-        "pytest_runner",
+        "fastapi==0.3.0",
+        "pytest_runner==4.2",
         "zenroom==0.0.5",
-        "pre-commit",
-        "python-multipart",
-        "pyjwt",
+        "pre-commit==1.14.3",
+        "python-multipart==0.0.5",
+        "pyjwt==1.7.1",
+        "sqlalchemy==1.2.17",
     ],
     tests_require=["pytest", "codecov", "requests", "pytest-cov"],
 )
