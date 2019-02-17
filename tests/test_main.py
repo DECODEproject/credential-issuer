@@ -5,7 +5,7 @@ from os import environ
 from pathlib import Path
 
 import pytest
-from starlette.status import HTTP_204_NO_CONTENT
+from starlette.status import HTTP_204_NO_CONTENT, HTTP_412_PRECONDITION_FAILED
 from starlette.testclient import TestClient
 
 from app.config.config import BaseConfig
@@ -137,3 +137,48 @@ def test_fake_get_authorizable_attribute():
         headers={"Authorization": "Bearer %s" % auth()},
     )
     assert r.status_code == HTTP_204_NO_CONTENT
+
+
+# validate_attribute_info
+def test_validate_attribute_info():
+    init_models(engine)
+    client = TestClient(api)
+    aaid = "".join(random.choice(string.ascii_lowercase) for i in range(10))
+    client.post(
+        "/authorizable_attribute",
+        json={
+            "authorizable_attribute_id": aaid,
+            "authorizable_attribute_info": [{"one": "value"}, {"two": "value"}],
+        },
+        headers={"Authorization": "Bearer %s" % auth()},
+    )
+
+    r = client.post(
+        "/validate_attribute_info",
+        json={"authorizable_attribute_id": aaid, "values": [{"one": "value"}]},
+        headers={"Authorization": "Bearer %s" % auth()},
+    )
+    assert r.json()
+
+
+def test_non_validate_attribute_info():
+    init_models(engine)
+    client = TestClient(api)
+    aaid = "".join(random.choice(string.ascii_lowercase) for i in range(10))
+    client.post(
+        "/authorizable_attribute",
+        json={
+            "authorizable_attribute_id": aaid,
+            "authorizable_attribute_info": [{"one": "value"}, {"two": "value"}],
+        },
+        headers={"Authorization": "Bearer %s" % auth()},
+    )
+
+    r = client.post(
+        "/validate_attribute_info",
+        json={"authorizable_attribute_id": aaid, "values": [{"something": "mah"}]},
+        headers={"Authorization": "Bearer %s" % auth()},
+    )
+
+    assert r.status_code == HTTP_412_PRECONDITION_FAILED
+    assert r.json()["detail"] == "Values mismatch not in Authorizable Attribute"

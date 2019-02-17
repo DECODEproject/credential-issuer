@@ -1,3 +1,5 @@
+import json
+
 from sqlalchemy import Column, Integer, Unicode
 
 from app.database import Base, engine, DB
@@ -11,6 +13,11 @@ class AuthorizableAttribute(Base):
     @classmethod
     def by_aa_id(cls, aa_id):
         return DB.query(cls).filter_by(authorizable_attribute_id=aa_id).first()
+
+    @property
+    def value_set(self):
+        aa_info = json.loads(self.authorizable_attribute_info)
+        return set([(k, v) for _ in aa_info for k, v in _.items()])
 
 
 Base.metadata.create_all(bind=engine)
