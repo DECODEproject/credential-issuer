@@ -7,7 +7,7 @@ setup(
     author_email="puria@dyne.org",
     packages=find_packages(),
     install_requires=[
-        "fastapi==0.3.0",
+        "fastapi==0.5.1",
         "pytest_runner==4.2",
         "zenroom==0.0.5",
         "pre-commit==1.14.4",
