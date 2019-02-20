@@ -6,7 +6,11 @@ import jwt
 from fastapi import FastAPI, Security, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from starlette.exceptions import HTTPException
-from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
+from starlette.status import (
+    HTTP_201_CREATED,
+    HTTP_204_NO_CONTENT,
+    HTTP_412_PRECONDITION_FAILED,
+)
 
 from app.config.config import BaseConfig
 from app.database import DB
@@ -17,6 +21,8 @@ from app.schema import (
     VerificationKeyOutput,
     UidOutput,
     AuthorizableAttributeSchema,
+    ValidateAuthorizableAttributeInfoInput,
+    BlindSignatureInput,
 )
 from app.zencontract import ZenContract, CONTRACTS
 
@@ -117,6 +123,23 @@ def get_authorizable_attribute(
     return aa
 
 
+@api.post("/validate_attribute_info")
+def validate_attribute_info(
+    item: ValidateAuthorizableAttributeInfoInput, token: str = Security(oauth2_scheme)
+):
+    authorizable_attribute_id = item.authorizable_attribute_id
+    values = set([(k, v) for _ in item.values for k, v in _.items()])
+    aa = AuthorizableAttribute.by_aa_id(authorizable_attribute_id)
+
+    if values not in aa.value_set:
+        raise HTTPException(
+            status_code=HTTP_412_PRECONDITION_FAILED,
+            detail="Values mismatch not in Authorizable Attribute",
+        )
+
+    return True
+
+
 @api.get("/verification_key", response_model=VerificationKeyOutput)
 def verification_key(token: str = Security(oauth2_scheme)):
     secret = load_keypair()
@@ -125,26 +148,17 @@ def verification_key(token: str = Security(oauth2_scheme)):
     return json.loads(contract.execute())
 
 
+@api.post("/blind_signature")
+def blind_signature(req: BlindSignatureInput, token: str = Security(oauth2_scheme)):
+    contract = ZenContract(CONTRACTS.BLIND_SIGN)
+    contract.keys(load_keypair())
+    contract.data(req)
+    return contract.execute()
+
+
 @api.get("/uid", response_model=UidOutput)
 def uid(token: str = Security(oauth2_scheme)):
     return {"credential_issuer_id": config.get("uid")}
-
-
-# @api.get(
-#     "/validate_attribute_info"
-# )  # , response_model=ValidateAuthorizableAttributeInfoOutput)
-# def validate_attribute_info(authorizable_attributes_ids: str, authorized_values: str, token: str = Security(oauth2_scheme)):
-#     # data = authorizable_attribute_info
-#     # # do the magic, for the moment return TRUE no matter what, most likely it will be something like:
-#     # if type(data) != dict:
-#     #       raise TypeError('Data passed has invalid type')
-#     # bool_vals = []
-#     # for k in compulsory_items:
-#     #     set_to_check = dict_of_authorized_values.get(k,set()) # dict_of_autorized_values is a dictionary of 'str':set() pairs
-#     #     bool_val = data.get(k,None) in set_to_check
-#     #     bool_vals.append(bool_val)
-#     # return all(bool_vals)
-#     return 1
 
 
 @api.get("/test")

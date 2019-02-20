@@ -33,9 +33,33 @@ class VerificationKeyOutput(BaseModel):
     ci_unique_id: VerificationOutput
 
 
-class ValidateAuthorizableAttributeInfoOutput(BaseModel):
-    pass
+class ValidateAuthorizableAttributeInfoInput(BaseModel):
+    authorizable_attribute_id: str
+    values: List[dict]
 
 
 class UidOutput(BaseModel):
     credential_issuer_id: str
+
+
+class C(BaseModel):
+    a: str
+    b: str
+
+
+class π_s(BaseModel):
+    rk: str
+    c: str
+    rr: str
+    rm: str
+
+
+class RequestInput(BaseModel):
+    cm: str
+    public: str
+    pi_s: π_s
+    c: C
+
+
+class BlindSignatureInput(BaseModel):
+    request: RequestInput

@@ -7,6 +7,7 @@ from app.utils import get_contract
 class CONTRACTS:
     GENERATE_KEYPAIR = "03-CREDENTIAL_ISSUER-keypair.zencode"
     PUBLIC_VERIFY = "04-CREDENTIAL_ISSUER-public-verify-keypair.zencode"
+    BLIND_SIGN = "05-CREDENTIAL_ISSUER-credential-blind-signature.zencode"
 
 
 config = BaseConfig()
