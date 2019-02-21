@@ -109,7 +109,7 @@ This API server is meant for the Credential Issuing of the DDDC Project part of 
 <img width="800" src="https://github.com/DECODEproject/decidim-pilot-infrastructure/raw/master/docs/infrastructure-overview.png" ></img>
 
 This will handle both the credential issuing with Coconut (for the wallet) and the interaction with the DDDC Site as 
-described [here](https://pad.dyne.org/code/#/1/edit/zt-wonMAuz8+rMAgAe+0ow/gFxVI9wkVdD-x7X7Fn5TsTYa/)
+described [here](REQUIREMENTS.md)
 
 ***
 ## :whale: Docker
@@ -132,7 +132,7 @@ endpoint
 This returns a valid JWT to be used over OAuth2 covered calls in the `Bearer` header
 
 #### /authorizable_attribute
-Creates an Authorizable Attibute as defined on [here](https://pad.dyne.org/code/#/1/edit/zt-wonMAuz8+rMAgAe+0ow/gFxVI9wkVdD-x7X7Fn5TsTYa/)
+Creates an Authorizable Attibute as defined on [here](REQUIREMENTS.md)
 it contains an `authorizable_attribute_id` and a `authorizable_attribute_info` in form of a list of objects 
 each one with a key and values 
 
