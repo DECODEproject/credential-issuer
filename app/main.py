@@ -112,9 +112,7 @@ def authorizable_attribute(
     "/authorizable_attribute/{authorizable_attribute_id}",
     response_model=AuthorizableAttributeOutput,
 )
-def get_authorizable_attribute(
-    authorizable_attribute_id, token: str = Security(oauth2_scheme)
-):
+def get_authorizable_attribute(authorizable_attribute_id):
     aa = AuthorizableAttribute.by_aa_id(authorizable_attribute_id)
     if not aa:
         raise HTTPException(
@@ -124,14 +122,12 @@ def get_authorizable_attribute(
 
 
 @api.post("/validate_attribute_info")
-def validate_attribute_info(
-    item: ValidateAuthorizableAttributeInfoInput, token: str = Security(oauth2_scheme)
-):
+def validate_attribute_info(item: ValidateAuthorizableAttributeInfoInput):
     authorizable_attribute_id = item.authorizable_attribute_id
     values = set([(k, v) for _ in item.values for k, v in _.items()])
     aa = AuthorizableAttribute.by_aa_id(authorizable_attribute_id)
 
-    if values not in aa.value_set:
+    if not values <= aa.value_set:
         raise HTTPException(
             status_code=HTTP_412_PRECONDITION_FAILED,
             detail="Values mismatch not in Authorizable Attribute",
@@ -141,7 +137,7 @@ def validate_attribute_info(
 
 
 @api.get("/verification_key", response_model=VerificationKeyOutput)
-def verification_key(token: str = Security(oauth2_scheme)):
+def verification_key():
     secret = load_keypair()
     contract = ZenContract(CONTRACTS.PUBLIC_VERIFY)
     contract.keys(secret)
@@ -149,7 +145,7 @@ def verification_key(token: str = Security(oauth2_scheme)):
 
 
 @api.post("/blind_signature")
-def blind_signature(req: BlindSignatureInput, token: str = Security(oauth2_scheme)):
+def blind_signature(req: BlindSignatureInput):  # pragma: no cover
     contract = ZenContract(CONTRACTS.BLIND_SIGN)
     contract.keys(load_keypair())
     contract.data(req)
@@ -157,7 +153,7 @@ def blind_signature(req: BlindSignatureInput, token: str = Security(oauth2_schem
 
 
 @api.get("/uid", response_model=UidOutput)
-def uid(token: str = Security(oauth2_scheme)):
+def uid():
     return {"credential_issuer_id": config.get("uid")}
 
 

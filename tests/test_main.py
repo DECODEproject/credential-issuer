@@ -143,7 +143,7 @@ def test_fake_get_authorizable_attribute():
 def test_validate_attribute_info():
     init_models(engine)
     client = TestClient(api)
-    aaid = "".join(random.choice(string.ascii_lowercase) for i in range(10))
+    aaid = "".join(random.choice(string.ascii_letters) for i in range(10))
     client.post(
         "/authorizable_attribute",
         json={
@@ -156,9 +156,9 @@ def test_validate_attribute_info():
     r = client.post(
         "/validate_attribute_info",
         json={"authorizable_attribute_id": aaid, "values": [{"one": "value"}]},
-        headers={"Authorization": "Bearer %s" % auth()},
     )
-    assert r.json()
+
+    assert r.json() is True
 
 
 def test_non_validate_attribute_info():

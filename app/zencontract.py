@@ -8,6 +8,8 @@ class CONTRACTS:
     GENERATE_KEYPAIR = "03-CREDENTIAL_ISSUER-keypair.zencode"
     PUBLIC_VERIFY = "04-CREDENTIAL_ISSUER-public-verify-keypair.zencode"
     BLIND_SIGN = "05-CREDENTIAL_ISSUER-credential-blind-signature.zencode"
+    CITIZEN_KEYGEN = "01-CITIZEN-request-keypair.zencode"
+    CITIZEN_REQ_BLIND_SIG = "02-CITIZEN-request-blind-signature.zencode"
 
 
 config = BaseConfig()
