@@ -46,26 +46,70 @@ using algorithms that can be deployed in any situation without any change.
 ***
 ## :rocket: Getting started
 
+> This requires docker to be installed
+
+
 ```bash
+git clone --recursive https://github.com/DECODEproject/dddc-credential-issuer.git
+cd dddc-credential-issuer
 ./start.sh
 ```
-> This requires docker to be installed
+
+This will clone the project and all submodules of the project (**--recursive** is important)
+then by lunching the `start.sh` will create a docker container with all the dependencies correctly
+configured.
 
 Head your browser to:
 
-**SWAGGER UI**: http://127.0.0.1/docs/
+**SWAGGER UI**: http://0.0.0.0/docs/
 
-**API**: http://127.0.0.1/ 
+**API**: http://0.0.0.0/ 
 
+for the authentication in the SWAGGER UI over the calls, that need the OAuth2 
+and JWT token please use the following credentials:
+
+
+| username | password |
+| :---: | :---: |
+| demo | demo |
+
+**NB:** `client_id` and `client_secret` are not mandatory and should be empty
 
 ***
 ## :floppy_disk: Install
-```pip install -e .```
+
+To locally run you need to run over a the API project over an [ASGI](https://asgi.readthedocs.io/en/latest/) server 
+like [uvicorn](https://www.uvicorn.org/).
+
+Assuming you are already cloned the project as described on [Getting started](#rocket_getting-started) with the 
+submodules and already `cd` into your project directory `dddc-credential-issuer` you need the following steps
+
+1. create a `virtualenv`
+1. activate the virtualenv
+1. upgrade the pip
+1. install dependencies
+1. install the ASGI serve
+1. run locally the API
+
+```bash
+python3 -m venv venv
+. venv/bin/activate
+pip install --upgrade pip
+pip install -e .
+pip install uvicorn
+uvicorn app.main:api --debug
+```
+
 
 ***
 ## :video_game: Usage
 
-To start using {project_name} just (fill with real documentation)
+This API server is meant for the Credential Issuing of the DDDC Project part of the 
+
+<img width="800" src="https://github.com/DECODEproject/decidim-pilot-infrastructure/raw/master/docs/infrastructure-overview.png" ></img>
+
+This will handle both the credential issuing with Coconut (for the wallet) and the interaction with the DDDC Site as 
+described [here](https://pad.dyne.org/code/#/1/edit/zt-wonMAuz8+rMAgAe+0ow/gFxVI9wkVdD-x7X7Fn5TsTYa/)
 
 ***
 ## :whale: Docker
@@ -79,6 +123,39 @@ All the options are documented on [here](https://github.com/tiangolo/uvicorn-gun
 
 ***
 ## :honeybee: API
+
+All the parameters and format of the input are documented on the swagger, below you'll find a quick description of each
+endpoint 
+
+
+#### /token
+This returns a valid JWT to be used over OAuth2 covered calls in the `Bearer` header
+
+#### /authorizable_attribute
+Creates an Authorizable Attibute as defined on [here](https://pad.dyne.org/code/#/1/edit/zt-wonMAuz8+rMAgAe+0ow/gFxVI9wkVdD-x7X7Fn5TsTYa/)
+it contains an `authorizable_attribute_id` and a `authorizable_attribute_info` in form of a list of objects 
+each one with a key and values 
+
+#### /authorizable_attribute/{authorizable_attribute_id}
+
+This allows to retrieve the Authorizable Attibute by the `authorizable_attribute_id`
+
+#### /validate_attribute_info
+
+This will check that the information provided are a correct subset of the information of the Authorizable Attribute
+
+#### /verification_key
+
+This prints out the Verification Key as per coconut credentials (like a public key) of the credential issuer, that should
+be available to all the places where some verification should take place (eg. connectors for petition signing)
+
+#### /blind_signature
+
+This blind signs a blind_signature_request as per Coconut workflow [look at this](https://github.com/DECODEproject/dddc-pilot-contracts/blob/master/README.md#05-credential_issuer-credential-blind-signaturezencode)
+
+#### /uid
+
+Gives back the Credential Issuer `ci_unique_id` a string that  identifies the credential issue instance.
 
 ***
 ## :wrench: Configuration
@@ -98,6 +175,16 @@ You are **encouraged to do this** and edit the config file with your real data.
 
 ### Variables
 
+| name | description | values | 
+| --- | --- | --- |
+| **debug** | This **should be off** in production add some verbose logging | `true` or `false` |
+| **uid** | The `ci_unique_id`. A string that identifies the credential issue instance | `string` |
+| **keypair** | The secret keypair path of the Credential Issuer, if the file does not exists, it is created the first a request is run | `file absolute path` |
+| **contracts_path** | The path of the Zencode smart contracts for now a submodule of [dddc-pilot-contracts](https://github.com/DECODEproject/dddc-pilot-contracts) | `directory absolute path` |
+| **ALGORITHM** | The algorithm used for the `JWT` generation | [available algorithms](https://pyjwt.readthedocs.io/en/latest/algorithms.html?highlight=algorithm#digital-signature-algorithms) |
+| **ACCESS_TOKEN_EXPIRE_MINUTES** | Minutes of validity of the JWT tokens | `int` |
+| **SQLALCHEMY_DATABASE_URI** | The url of your relational database (sqlite is tested by now) | [SQLAlchemy Database URL](https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls) | 
+
 
 ***
 ## :clipboard: Testing
@@ -108,6 +195,17 @@ python3 setup.py test
 
 ***
 ## :bug: Troubleshooting & debugging
+
+To run the `credential-issuer` in debug mode, please run it in local and activate `--debug` when you launch the ASGI
+uvicorn server. 
+
+Set the `LOG_LEVEL="debug"` ENVIRONMENT VARIABLE that is used by `uvicorn` and `starlette`.
+
+Configure your [`config.ini`](app/config.ini) and set the 
+
+```ini
+debug = true
+```
 
 
 ***
@@ -128,6 +226,8 @@ This project is receiving funding from the European Union’s Horizon 2020 resea
 https://decodeproject.eu/
 
 https://dyne.org/
+
+https://zenroom.dyne.org/
 
 https://dddc.decodeproject.eu/
 
