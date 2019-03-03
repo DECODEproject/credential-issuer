@@ -8,9 +8,17 @@ class TokenOutput(BaseModel):
     token_type: str
 
 
+class AuthorizableAttributeInfo(BaseModel):
+    name: str
+    type: str
+    valid_values: List[str]
+
+
 class AuthorizableAttributeSchema(BaseModel):
     authorizable_attribute_id: str
-    authorizable_attribute_info: List[dict]
+    authorizable_attribute_info: List[
+        AuthorizableAttributeInfo
+    ]  # AuthorizableAttributeInfo
 
 
 class AuthorizableAttributeOutput(BaseModel):
@@ -20,7 +28,6 @@ class AuthorizableAttributeOutput(BaseModel):
 
 
 class VerifyOutput(BaseModel):
-    g2: str
     beta: str
     alpha: str
 
@@ -30,36 +37,45 @@ class VerificationOutput(BaseModel):
 
 
 class VerificationKeyOutput(BaseModel):
-    ci_unique_id: VerificationOutput
+    issuer_identifier: VerificationOutput
 
 
-class ValidateAuthorizableAttributeInfoInput(BaseModel):
-    authorizable_attribute_id: str
-    values: List[dict]
-
-
-class UidOutput(BaseModel):
-    credential_issuer_id: str
+class AuthorizableAttributeInfoValue(BaseModel):
+    name: str
+    value: str
 
 
 class C(BaseModel):
-    a: str
     b: str
+    a: str
 
 
 class π_s(BaseModel):
-    rk: str
     c: str
+    rk: str
     rr: str
     rm: str
 
 
 class RequestInput(BaseModel):
-    cm: str
-    public: str
     pi_s: π_s
     c: C
+    cm: str
+    encoding: str
+    public: str
+    curve: str
+    zenroom: str
 
 
 class BlindSignatureInput(BaseModel):
     request: RequestInput
+
+
+class ValidateAuthorizableAttributeInfoInput(BaseModel):
+    authorizable_attribute_id: str
+    values: List[AuthorizableAttributeInfoValue]
+    blind_sign_request: RequestInput
+
+
+class UidOutput(BaseModel):
+    credential_issuer_id: str

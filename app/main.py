@@ -13,7 +13,7 @@ from starlette.status import (
 )
 
 from app.config.config import BaseConfig
-from app.database import DB
+from app.database import DBSession
 from app.models import AuthorizableAttribute
 from app.schema import (
     TokenOutput,
@@ -22,7 +22,6 @@ from app.schema import (
     UidOutput,
     AuthorizableAttributeSchema,
     ValidateAuthorizableAttributeInfoInput,
-    BlindSignatureInput,
 )
 from app.zencontract import ZenContract, CONTRACTS
 
@@ -65,7 +64,7 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire, "sub": config.get("TOKEN_SUBJECT")})
     keypair = json.loads(load_keypair())
-    secret = keypair["ci_unique_id"]["sign"]["x"]
+    secret = keypair["issuer_identifier"]["sign"]["x"]
     encoded_jwt = jwt.encode(to_encode, secret, algorithm=config.get("ALGORITHM"))
     return encoded_jwt
 
@@ -74,6 +73,7 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
 def token(form_data: OAuth2PasswordRequestForm = Depends()):
     username = form_data.username
     password = form_data.password
+
     if username != "demo" or password != "demo":
         raise HTTPException(status_code=400, detail="Incorrect username or password")
 
@@ -99,12 +99,13 @@ def token(form_data: OAuth2PasswordRequestForm = Depends()):
 def authorizable_attribute(
     item: AuthorizableAttributeSchema, token: str = Security(oauth2_scheme)
 ):
+    info = [_.json() for _ in item.authorizable_attribute_info]
     aa = AuthorizableAttribute(
         authorizable_attribute_id=item.authorizable_attribute_id,
-        authorizable_attribute_info=json.dumps(item.authorizable_attribute_info),
+        authorizable_attribute_info=json.dumps(info),
     )
-    DB.add(aa)
-    DB.commit()
+    DBSession.add(aa)
+    DBSession.commit()
     return {"credential_issuer_id": config.get("uid")}
 
 
@@ -124,32 +125,37 @@ def get_authorizable_attribute(authorizable_attribute_id):
 @api.post("/validate_attribute_info")
 def validate_attribute_info(item: ValidateAuthorizableAttributeInfoInput):
     authorizable_attribute_id = item.authorizable_attribute_id
-    values = set([(k, v) for _ in item.values for k, v in _.items()])
     aa = AuthorizableAttribute.by_aa_id(authorizable_attribute_id)
+    sent_values = [json.loads(_.json()) for _ in item.values]
 
-    if not values <= aa.value_set:
-        raise HTTPException(
-            status_code=HTTP_412_PRECONDITION_FAILED,
-            detail="Values mismatch not in Authorizable Attribute",
-        )
+    for v in sent_values:
+        if not aa.value_is_valid(v["name"], v["value"]):
+            raise HTTPException(
+                status_code=HTTP_412_PRECONDITION_FAILED,
+                detail="Values mismatch not in Authorizable Attribute",
+            )
 
-    return True
+    contract = ZenContract(CONTRACTS.BLIND_SIGN)
+    contract.keys(load_keypair())
+    contract.data(json.dumps(item.blind_sign_request.json()))
+    result = contract.execute()
+    print(result)
+    print(contract.errors())
+    return result
 
 
 @api.get("/verification_key", response_model=VerificationKeyOutput)
 def verification_key():
-    secret = load_keypair()
-    contract = ZenContract(CONTRACTS.PUBLIC_VERIFY)
-    contract.keys(secret)
-    return json.loads(contract.execute())
-
-
-@api.post("/blind_signature")
-def blind_signature(req: BlindSignatureInput):  # pragma: no cover
-    contract = ZenContract(CONTRACTS.BLIND_SIGN)
-    contract.keys(load_keypair())
-    contract.data(req)
-    return contract.execute()
+    keypair = json.loads(load_keypair())
+    verify = {
+        "issuer_identifier": {
+            "verify": {
+                "alpha": keypair["issuer_identifier"]["verify"]["alpha"],
+                "beta": keypair["issuer_identifier"]["verify"]["alpha"],
+            }
+        }
+    }
+    return verify
 
 
 @api.get("/uid", response_model=UidOutput)
