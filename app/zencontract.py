@@ -35,7 +35,7 @@ class ZenContract(object):
         self.zencode = get_contract(self.name)
 
     def execute(self):
-        if config.get("debug"):  # pragma: no cover
+        if config.getboolean("debug"):  # pragma: no cover
             log.debug("+" * 50)
             log.debug("EXECUTING %s" % self.name)
             log.debug("+" * 50)

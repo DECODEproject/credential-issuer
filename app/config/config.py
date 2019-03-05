@@ -39,3 +39,6 @@ class BaseConfig(object):
 
     def getint(self, name):
         return self.values.getint("DEFAULT", name)
+
+    def getboolean(self, name):
+        return self.values.getboolean("DEFAULT", name)

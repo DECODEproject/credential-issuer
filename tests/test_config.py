@@ -22,6 +22,12 @@ def test_config_getint():
     assert type(config.getint("ACCESS_TOKEN_EXPIRE_MINUTES")) is int
 
 
+def test_config_getboolean():
+    config = BaseConfig()
+    assert config.getboolean("debug") is True
+    assert type(config.getboolean("debug")) is bool
+
+
 @pytest.mark.xfail(raises=RuntimeError)
 def test_wrong_config():
     os.environ[CONFIG_FILE_ENV] = "/fake/file"

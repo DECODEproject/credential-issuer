@@ -53,7 +53,7 @@ def load_keypair():
         keypair.touch()
         keypair.write_text(generate_secret_key())
 
-    if config.get("debug"):  # pragma: no cover
+    if config.getboolean("debug"):  # pragma: no cover
         log.debug("+" * 50)
         log.debug("KEYPAIR IS: \n%s" % keypair.read_text())
         log.debug("+" * 50)
