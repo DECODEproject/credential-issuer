@@ -22,13 +22,6 @@ def auth():
     return r.json()["access_token"]
 
 
-def test_call():
-    client = TestClient(api)
-    r = client.get("/test")
-    assert r.status_code == 200
-    assert r.content.decode() == '"OK"'
-
-
 def test_token():
     client = TestClient(api)
     r = client.post(
@@ -71,16 +64,6 @@ def test_secret_key_creation(remove_secret):
     assert Path(c.get("keypair")).is_file()
 
 
-def test_verification_key():
-    client = TestClient(api)
-    r = client.get("/verification_key")
-    result = json.loads(r.content)
-    assert r.status_code == 200
-    assert result["issuer_identifier"]["verify"]
-    assert result["issuer_identifier"]["verify"]["alpha"]
-    assert result["issuer_identifier"]["verify"]["beta"]
-
-
 def test_uid():
     client = TestClient(api)
     config = BaseConfig()
@@ -92,7 +75,7 @@ def test_uid():
 def test_authorizable_attribute():
     client = TestClient(api)
     aaid = "".join(random.choice(string.ascii_lowercase) for i in range(10))
-    aa_info = [{"name": "super_long_key", "type": "str", "valid_values": ["miao"]}]
+    aa_info = [{"name": "super_long_key", "type": "str", "value_set": ["miao"]}]
     r = client.post(
         "/authorizable_attribute",
         json={
@@ -116,7 +99,7 @@ def test_get_authorizable_attribute():
         json={
             "authorizable_attribute_id": aaid,
             "authorizable_attribute_info": [
-                {"name": "super_long_key", "type": "str", "valid_values": ["miao"]}
+                {"name": "super_long_key", "type": "str", "value_set": ["miao"]}
             ],
         },
         headers={"Authorization": "Bearer %s" % auth()},
@@ -139,36 +122,37 @@ def test_fake_get_authorizable_attribute():
     assert r.status_code == HTTP_204_NO_CONTENT
 
 
-def test_validate_attribute_info():
+def test_credential():
     client = TestClient(api)
     aaid = "".join(random.choice(string.ascii_letters) for i in range(10))
     info = [
-        dict(valid_values=["some val 1", "five", "love"], name="name_1", type="int"),
-        dict(valid_values=["3"], name="name_2", type="str"),
+        dict(value_set=["some val 1", "five", "love"], name="name_1", type="int"),
+        dict(value_set=["3"], name="name_2", type="str"),
     ]
-    client.post(
+    insert = client.post(
         "/authorizable_attribute",
         json={"authorizable_attribute_id": aaid, "authorizable_attribute_info": info},
         headers={"Authorization": "Bearer %s" % auth()},
     )
 
+    assert insert.status_code == 201
     keys = ZenContract(CONTRACTS.CITIZEN_KEYGEN).execute()
     contract = ZenContract(CONTRACTS.CITIZEN_REQ_BLIND_SIG)
     contract.keys(keys)
     blind_sign_request = contract.execute()
-
     values = [dict(name="name_1", value="love"), dict(name="name_2", value="3")]
 
     r = client.post(
-        "/validate_attribute_info",
+        "/credential",
         json={
             "authorizable_attribute_id": aaid,
             "values": values,
-            "blind_sign_request": blind_sign_request,
+            "blind_sign_request": json.loads(blind_sign_request),
         },
     )
 
-    assert r.json() != ""
+    assert r.status_code == 200
+    assert r.json() is not None
 
 
 def test_non_validate_attribute_info():
@@ -180,9 +164,7 @@ def test_non_validate_attribute_info():
             "authorizable_attribute_id": aaid,
             "authorizable_attribute_info": [
                 dict(
-                    valid_values=["some val 1", "five", "love"],
-                    name="name_1",
-                    type="int",
+                    value_set=["some val 1", "five", "love"], name="name_1", type="int"
                 )
             ],
         },
@@ -190,29 +172,32 @@ def test_non_validate_attribute_info():
     )
 
     blind_sign_request = {
-        "zenroom": "0.8.1",
-        "pi_s": {
-            "rm": "d277c5eb12a50c6dd9800d00d34f426d9164a9dfa38f93d851405143d01d2193",
-            "rk": "69b7c21b8c303fb80570feae9da7cd8bf0b929125053aa39a5e1c61ebc516c7c",
-            "c": "e179ede630a325bbbacd3fd483af785bb2b703bab00b4e358fde2b3170781f50",
-            "rr": "d3294ee00752c4186fb43a5f88f4f580ec274c0e622142d61af40d30eff296f6",
-        },
-        "c": {
-            "a": "043544f625d514badc41ed744bcbdef4dddf90bed3e32bf27497cfdd6602feb8054be4f2b54ffcbdb134a56df317148ea806c657faeaeb54a74953493aab1542fd55110979592d4f09cab5a5ed608f91b9e65032922b81b9b9afeef7912f38742d",
-            "b": "04491e37aa8e0e0c54a4c3b4a766797d1dfc62539de5cb5c86710354d66bb79775c00bf40a7db0fd8684c946105ef80d453ad38885ffd81ebd047faabfcdf62ff6ae815e0e68552bce5a12abedb3bc7b1f67a24694741cede58a0c98414f3bee3e",
-        },
-        "cm": "0413cd90e1ff111e3dc0ebf3dfe942ce338ee3e9e53ebd6101cece1b5e7a1f536e8cba1a18e1e286f00952560b4d5ef883162ee09ed700ef294b49513671f05caacb7ce39f56ce04ceb2e1b06961f8fb3f8a6c5f0e077908842d85d1c73beaeb33",
-        "public": "041421f09217c0725a4a630637470a31e33df2a4b86aa9c92807ca5d0e777ac52e26ca80cda3b61a35b19b628dd7b9b0934f25ceb59b6f950f325e0774a1c972a63e806f23a6dacbdec0750d6cce340e3b752aee9abd42ae5114feaa8b48d6acdb",
-        "curve": "bls383",
-        "encoding": "hex",
+        "request": {
+            "zenroom": "0.8.1",
+            "pi_s": {
+                "rm": "d277c5eb12a50c6dd9800d00d34f426d9164a9dfa38f93d851405143d01d2193",
+                "rk": "69b7c21b8c303fb80570feae9da7cd8bf0b929125053aa39a5e1c61ebc516c7c",
+                "c": "e179ede630a325bbbacd3fd483af785bb2b703bab00b4e358fde2b3170781f50",
+                "rr": "d3294ee00752c4186fb43a5f88f4f580ec274c0e622142d61af40d30eff296f6",
+            },
+            "c": {
+                "a": "043544f625d514badc41ed744bcbdef4dddf90bed3e32bf27497cfdd6602feb8054be4f2b54ffcbdb134a56df317148ea806c657faeaeb54a74953493aab1542fd55110979592d4f09cab5a5ed608f91b9e65032922b81b9b9afeef7912f38742d",
+                "b": "04491e37aa8e0e0c54a4c3b4a766797d1dfc62539de5cb5c86710354d66bb79775c00bf40a7db0fd8684c946105ef80d453ad38885ffd81ebd047faabfcdf62ff6ae815e0e68552bce5a12abedb3bc7b1f67a24694741cede58a0c98414f3bee3e",
+            },
+            "cm": "0413cd90e1ff111e3dc0ebf3dfe942ce338ee3e9e53ebd6101cece1b5e7a1f536e8cba1a18e1e286f00952560b4d5ef883162ee09ed700ef294b49513671f05caacb7ce39f56ce04ceb2e1b06961f8fb3f8a6c5f0e077908842d85d1c73beaeb33",
+            "public": "041421f09217c0725a4a630637470a31e33df2a4b86aa9c92807ca5d0e777ac52e26ca80cda3b61a35b19b628dd7b9b0934f25ceb59b6f950f325e0774a1c972a63e806f23a6dacbdec0750d6cce340e3b752aee9abd42ae5114feaa8b48d6acdb",
+            "curve": "bls383",
+            "encoding": "hex",
+            "schema": "lambda",
+        }
     }
 
     r = client.post(
-        "/validate_attribute_info",
+        "/credential",
         json={
             "authorizable_attribute_id": aaid,
             "blind_sign_request": blind_sign_request,
-            "values": [{"name": "super_long_key", "value": "miao"}],
+            "values": [{"name": "name_1", "value": "miao"}],
         },
         headers={"Authorization": "Bearer %s" % auth()},
     )

@@ -134,24 +134,23 @@ This returns a valid JWT to be used over OAuth2 covered calls in the `Bearer` he
 #### /authorizable_attribute
 Creates an Authorizable Attibute as defined on [here](REQUIREMENTS.md)
 it contains an `authorizable_attribute_id` and a `authorizable_attribute_info` in form of a list of objects 
-each one with a key and values 
+each one with a key and values
+
+This will create the rules to allow people to obtain a credential. Each credential
+will have it's own keypair (in form of a Credential Issuer Keypair, Coconut flow 03)
+and the public `verification_key` will be printed as a result
 
 #### /authorizable_attribute/{authorizable_attribute_id}
 
 This allows to retrieve the Authorizable Attibute by the `authorizable_attribute_id`
 
-#### /validate_attribute_info
+This will contain the ruleset and the verification_key
+
+#### /credential
 
 This will check that the information provided are a correct subset of the information of the Authorizable Attribute
-
-#### /verification_key
-
-This prints out the Verification Key as per coconut credentials (like a public key) of the credential issuer, that should
-be available to all the places where some verification should take place (eg. connectors for petition signing)
-
-#### /blind_signature
-
-This blind signs a blind_signature_request as per Coconut workflow [look at this](https://github.com/DECODEproject/dddc-pilot-contracts/blob/master/README.md#05-credential_issuer-credential-blind-signaturezencode)
+and if they are correct it will sign (add a sigma_tilde) and release a credential
+for the user (coconut flow 05)
 
 #### /uid
 

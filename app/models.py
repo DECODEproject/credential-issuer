@@ -11,6 +11,8 @@ class AuthorizableAttribute(Base):
     aaid = Column(Integer, primary_key=True, index=True)
     authorizable_attribute_id = Column(Unicode, unique=True, index=True)
     authorizable_attribute_info = Column(Unicode)
+    keypair = Column(Unicode)
+    verification_key = Column(Unicode)
 
     @classmethod
     def by_aa_id(cls, aa_id):
@@ -31,7 +33,21 @@ class AuthorizableAttribute(Base):
         if not info:
             return False
 
-        return value in info["valid_values"]
+        return value in info["value_set"]
+
+    @property
+    def value_names(self):
+        aa_info = json.loads(self.authorizable_attribute_info)
+        return [json.loads(_)["name"] for _ in aa_info]
+
+    def publish(self):
+        info = json.loads(self.authorizable_attribute_info)
+        info = [json.loads(_) for _ in info]
+        return {
+            "authorizable_attribute_id": self.authorizable_attribute_id,
+            "authorizable_attribute_info": info,
+            "verification_key": json.loads(self.verification_key),
+        }
 
 
 Base.metadata.create_all(bind=engine)

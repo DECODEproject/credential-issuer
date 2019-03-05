@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Dict
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Schema
 
 
 class TokenOutput(BaseModel):
@@ -11,33 +11,31 @@ class TokenOutput(BaseModel):
 class AuthorizableAttributeInfo(BaseModel):
     name: str
     type: str
-    valid_values: List[str]
+    value_set: List[str]
 
 
 class AuthorizableAttributeSchema(BaseModel):
     authorizable_attribute_id: str
-    authorizable_attribute_info: List[
-        AuthorizableAttributeInfo
-    ]  # AuthorizableAttributeInfo
+    authorizable_attribute_info: List[AuthorizableAttributeInfo]
 
 
 class AuthorizableAttributeOutput(BaseModel):
     authorizable_attribute_id: str
-    authorizable_attribute_info: str
-    aaid: int
+    authorizable_attribute_info: List[Dict]
+    verification_key: Dict
 
 
-class VerifyOutput(BaseModel):
-    beta: str
-    alpha: str
-
-
-class VerificationOutput(BaseModel):
-    verify: VerifyOutput
-
-
-class VerificationKeyOutput(BaseModel):
-    issuer_identifier: VerificationOutput
+# class VerifyOutput(BaseModel):
+#     beta: str
+#     alpha: str
+#
+#
+# class VerificationOutput(BaseModel):
+#     verification_key: VerifyOutput
+#
+#
+# class VerificationKeyOutput(BaseModel):
+#     issuer_identifier: VerificationOutput
 
 
 class AuthorizableAttributeInfoValue(BaseModel):
@@ -65,6 +63,7 @@ class RequestInput(BaseModel):
     public: str
     curve: str
     zenroom: str
+    scheme: str = Schema(..., alias="schema")
 
 
 class BlindSignatureInput(BaseModel):
@@ -74,8 +73,9 @@ class BlindSignatureInput(BaseModel):
 class ValidateAuthorizableAttributeInfoInput(BaseModel):
     authorizable_attribute_id: str
     values: List[AuthorizableAttributeInfoValue]
-    blind_sign_request: RequestInput
+    blind_sign_request: BlindSignatureInput
 
 
 class UidOutput(BaseModel):
+    verification_key: Dict
     credential_issuer_id: str

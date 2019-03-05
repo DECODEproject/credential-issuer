@@ -1,4 +1,5 @@
 from zenroom import zenroom
+from zenroom.zenroom import Error
 
 from app.config.config import BaseConfig
 from app.utils import get_contract
@@ -41,9 +42,14 @@ class ZenContract(object):
             log.debug("DATA: %s" % self.data())
             log.debug("KEYS: %s" % self.keys())
             log.debug("CODE: \n%s" % self.zencode.decode())
-        result, errors = zenroom.execute(self.zencode, keys=self._keys, data=self._data)
-        self._error = errors
-        return result.decode()
+        try:
+            result, errors = zenroom.execute(
+                self.zencode, keys=self._keys, data=self._data
+            )
+            self._error = errors
+            return result.decode()
+        except Error:
+            return None
 
     def keys(self, keys=None):
         if keys:
