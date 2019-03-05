@@ -1,98 +1,212 @@
-# Credential issuer logic
+# Credential issuing in use for the BCN Pilots: Log-in and attribute verification
 
 
-## Requirements
+This document tries to summarize the use of the credentials in the BCN pilots, covering all cases (log-in to dashboard, credential use) except the specific details of the petition signature process. It is aimed as a guide for further pilots, to unify vocabulary and simplify interaction among developers.
 
-1. Coconut could have a unique_id attached to each credential.
-2. The responsibility that the ids are unique lies entirely on the credential issuer owner.
-3. The conditions for uniqueness, so, the link between the amount of information required from a person and the fact that this person is awarded a credential associated to a unique id lies also on the credential issuer. This is something every community running decidim should decide and agree. It is not up to us to restrict this.
-4. The use of DNI as unique id is discarded for a couple of reasons:
-  1. Most communities using DECIDIM, likely to use our signature support software, do not use DNI and are against it, and even do not have one.
-  2. DNI poses a security thread as anything marked with this becomes personal data by virtue of the GDPR, as DNI is a unique and untransferable personal identifier.
+## Notation and documentation
 
+- Variables are referenced like `$variable` 
+- Important ontology elements are referenced with CAPS (like `CREDENTIAL ISSUER`).
+- We try to use the same terminology as possible for both pilots, named **DDDC** and  **IoT** respectively.
+- PLEASE try to document the repsective APIs using OpenAPI specs or something similar (swagger).
 
-## Infrastructure
+## References
 
-Currently the issuer is a web-instance inside the DDDC website. This should be changed, as by design (see my earlier email), the credential generation should be independent of the guys running the petition (the DDDC site).
-
-I suggest we package everything into a REST API interface in a docker way with an entry endpoint, and attach it to the DDDC infrastructure as a new service to the docker-compose.
-
-
-## Logic
-
-The logic contains two parts. One is the UNIQUE_ID generation. The other is the COCONUT credential generation. My suggestion:
-
-> Notation commentary: Variables are reference like `$variable` and important elements with CAPS (like `CREDENTIAL ISSUER`).
-
-
-** A. Credential logic set-up:**
-
-1. DDDC admin creates a `PETITION` and defines the `ATTRIBUTES` that will require validation needed to participate in it identified by `$autorizable_attribute_id`. It assigns an `$dddc_petition_id` to the petition and also assigns a `$credential_issuer_endpoint_address` that point to the credential issuer API needed to validate it.
-2. DDDC admin also defines the set of `$autorizable_attribute_info` (see below) needed to award a `$autorizable_attribute_unique_id` and a `CREDENTIAL` that validates the `ATTRIBUTES` to anyone that requests it and fulfills the conditions to get it. This `$autorizable_attribute_info` can be a DNI, a token, a Name, whatever. It must be the set of information the community has agreed that uniquely serves to identify someone. 
-> In our case, this is going to be a CODE/TOKEN provided to participants (all the same - represents the petition?) +  their email. The INFO field is a dictionary containing pairs {`$info_element_name`: `$info_element_type`}: The first is the name of the field to show, the second is the expected type (string, number, etc...). 
-3. DDDC obtains in whichever way an `$credential_issuer_authorization_token` to communicate with the Credential-issuer API defined by the `$credential_issuer_endpoint_address`.
-4. DDDC website makes a POST call, authorized via `$credential_issuer_authorization_token`, to CREATE a new `AUTORIZABLE_ATTRIBUTE` identified by `$autorizable_attribute_id`, which includes the compulsory fields `$autorizable_attribute_info`, which is dictionary with pairs `($attribute_info_key, $attribute_info_type)`.
-5. Credential issuer API receives the POST, makes sure the authorization is valid, and creates an instance of `AVAILABLE_AUTORIZABLE_ATTRIBUTE` tied to the `$autorizable_attribute_id` and `$autorizable_attribute_info` fields, returns OK 200. The return call also includes a field called `$credential_issuer_name` to identify the credential-issuer.
-6. DDDC adds to the JSON schema graph-ql that is used to communicate with the Wallet the `$dddc_petition_id`, `$credential_issuer_endpoint_address`, `$autorizable_attribute_id` and `$autorizable_attribute_info`.
+- BCN Pilot partners:
+  - Smart Citizen [website](https://smartcitizen.me/) and [API](https://developer.smartcitizen.me/)
+  - DDDC [website](http://dddc.decodeproject.eu), [repo](https://github.com/alabs/DDDC), [beta site](https://betadddc.alabs.org/) and API (see **GraphQL** section in README of repo).
+- Infrastructure:
+  - Zencode scripts for the COCONUT flow are available here: https://github.com/DECODEproject/dddc-pilot-contracts (**as development evolves really quickly, if you use contracts, do NOT copy them, but link them using `git submodule` trick**).
+  - Zencode contracts with example on coconut credentials: https://github.com/DECODEproject/zenroom/tree/master/examples/zencode_coconut
+  - Credential issuer service API developed by Dyne - https://github.com/DECODEproject/dddc-credential-issuer
+	- IoT components developped by Thingful and hosted by Smart Citizen.
+> Please SAM add relevant links to repos
+  - BCN
+  
+  dashboard, [repo](https://github.com/DECODEproject/bcnnow) and [link](http://bcnnow.decodeproject.eu)
+	- DECODE Phone-App, [repo](https://github.com/DECODEproject/wallet) and Google Play and Apple Store (not yet public).
+> Please JORDI can we rename the repo into decodeproject/app ?
+  - DECODE specific IoT-Web-App
+  - IoT components (policy store, encrypted datastore) developed by Thingful (TH and hosted by Smart Citizen (SC)
+> Please SAM add relevant link to repo and explain stack
 
 
-**B. UNIQUE ID Generation:**
-    
-1. Wallet queries via GET the `DDDC GRAPHQL ENDPOINT API` to get `$credential_issuer_endpoint_address`, `$autorizable_attribute_id` and `autorizable_attribute_info` tied to `$dddc_petition_id`, which has been read from original petition encoded in QR code from DDDC website.
-2. Wallet decodes the response of the GRAPHQL DDDC ENDPOINT and stores the info. 
-3. When users wants to obtain the credential, the wallet presents a screen form to user with the elements of `$autorizable_attribute_info`, on behalf of `$credential_issuer_name`.
-3. User inputs the information, presses "send" and the wallet executes a GET call to the  `$credential_issuer_endpoint_address` identified by `$autorizable_attribute_id` with the information input by the user in the body of the call `$autorizable_attribute_info`. To note, this call need not be authorized, just controlled for throttling.
-4. Credential issuer API receives the GET call, parses information and executes a function 
-```$validate_info_success = (boolean) validate_info((dictionary)$autorizable_attribute_info)``` that returns TRUE if the info is sufficient to be awarded a credential and false otherwise. If the function returns FALSE, the API returns a standard HTTP error to the wallet. Else, proceed.
-5. If the result of the funciton call is TRUE, then it calls a deterministic HASH FUNCTION ```$autorizable_attribute_unique_id = (long str) hashing_function($autorizable_attribute_info)``` and returns it on the GET call. Then the coconut flow begins.  
 
-> This function should be placed in `main.py` file once the [API](https://github.com/DECODEproject/dddc-credential-issuer) is finished. The signature call of the function should be: ```$validate_info_success = (boolean) validate_info((dictionary)$autorizable_attribute_info)```
+## Pending tasks
+- @All: Read doc
+- @Sam & @Rohit: Modify flow and add extra steps
+- BCNNow Dashboard @Rohit:
+ - Create API with three exposed methods: Log-in, create_dashbord_encrypted (IoT pilot) and create_dashboard_unencrypted (DDDC)
+ - Agree signature API calls with @Sam and @Jordi
+ - Document API and write example calls for DDDC admin and Policy Store admin respectively
+- Phone-App @Jordi:
+  - Implement UX for data sharing with Dashboard
+  - Implement calls for log-in and Credential issuer obtention
+  - Implement calls for credential issuer interaction
+- Web-App @Sam:
+  - Agree with @Jordi and document policy store API calls
+  - Implement log-in calls to dashboard
+  - Implement calls for Credential issuer obtention
+- DDDC website @Anders:
+  - Implement calls for dashboard set-up
+  - Implement calls for credential issuer api set-up
+- POlicy store @Sam:
+	- Implement logic to set up credential issuer and dashboard once SC admin triggers it and coordinate integration with @Guillem.
+- SC website @Guillem: 
+  - Coordinate with Sam to make everythin run
+- Credential issuer API @Puria: 
+  - Implement changes to API credential to break 1 to one mapping
 
-> Or more, pythonic... 
-
-```python
-def validate_attribute_info(autorizable_attribute_info, dict_of_autorized_values):
-    data = autorizable_attribute_info
-    # do the magic, for the moment return TRUE no matter what, most likely it will be something like:
-    if type(data) != dict:
-          raise TypeError('Data passed has invalid type')
-    bool_vals = []
-    for k in compulsory_items:
-        set_to_check = dict_of_autorized_values.get(k,set()) # dict_of_autorized_values is a dictionary of 'str':set() pairs
-        bool_val = data.get(k,None) in set_to_check
-        bool_vals.append(bool_val)
-    return all(bool_vals)
-```
-
-Notes:
-* Since the hash is deterministic, a person asking twice for a credential, will get the same credential, that the tally wil recognise as a duplicated signature.
-* The hashing algorithm used must be public if one desires to have multiple credential issuers. As long as they are known to the community and their puclib keys accepted, this poses no security threat.
-* The fact that the wallet keys are associated with a unique id and are generated every time on the wallet we run an attribute validation via credential means that we do not need to store them securely on the wallet once the credential has been obtained. (Is this right?).
-* The validate_info function will be defined and written specially for the pilot for delivery. It mimics a "census check call" or "membership check call" to a  database by an organization.
- 
-**C. COCONUT flow (reference: https://github.com/DECODEproject/decidim-pilot-contracts)**
-1. Wallet runs zencode script 01-CITIZEN-request-keypair.zencode and generates keys for wallet, and stores securely 
-> Question : is the key storage really needed? are the keys gonna be used for anything else?.
-2. Wallet runs 02-CITIZEN-request-blind-signature.zencode and send output to Credential issuer via GET call.
-3. (Asynchronous) Credential issuer runs 03-CREDENTIAL_ISSUER-keypair.zencode once on startup and stores the keys securely.
-4. (Asynchronous) Credential issuer must have a method endpoint to a GET call that exposes the public key, output of contract 04-CREDENTIAL_ISSUER-public-verify-keypair.zencode. This is needed for tallying and checkers.
-5. Credential issuer on receiving request at point C.2. via GET, executes  05-CREDENTIAL_ISSUER-credential-blind-signature.zencode, receives the CREDENTIALs, packages it as a long string and returns with the response to the GET request.
-6. Wallet executes 06-CITIZEN-credential-blind-signature.zencode with the input of the result of the GET request, and stores securely the credential.
-7. Wallet executes 07-CITIZEN-blind-proof-credential.zencode and stores the proof that the credential is valid. It has to be ready to present this proof to anyone wishing the check its validity, which will need to use the exposed endpoint in step B.4 to do so. This will be needed for the contract signature support.
-
-## Responsibilities
-
-- Puria: Develop all logic API-REST involved on the credential issuer part and the hashing function.
-- Alabs: Set up the calls to the API-REST, set up the interface of the admin of DDDC, agree with @Jordi on JSON schema fields for the graphql API between wallet and DDDC. Agree with @Puria over fields and signature calls to the API-REST Credential Issuer.
-- Jordi: Develop wallet side of things, agree with @puria and andres (alabs).
-- Jaromil: Confirm all what I said is valid.
-- All: Agree in deployment proposal
-- Andrea: Once all agree, add cards to trello.
 
 ## Calendar
+- DDDC
+  - Dashboard API to work by 7th March
+  - March 7th, all DDDC working except log-in flow
+  - March 21st, all in production and app with log-in flow implemented
+  - April 1st, all working smoothly
+  - Credential ISSUER API changes effective by March 5th
+  - Petitions connector API ready by March 11th
+- IoT
+  - Web-app to work with entire flow by 24th March
+  - Dashboard API to work by 7th March
+  - Credential ISSUER API changes effective by March 7th
+  - IoT Phone-app to work by April 1st
+  - All production working by April 15th.
+  
 
-This is an absolute priority for the incoming week. Please do confirm and acknoledge the content of the emails.
+---
 
-Thanks a lot to all for your kind cooperation.
+## Pilot common structure:
+- Admin (DDDC or Smart Citizen) which is in charge of setting up both `BCNNOW` and the `CREDENTIAL ISSUER API SERVICE` following the rules accorded with the respective users in off-line sessions. This admin needs a `$bcnnow-api-token` and a `$ci-api-token` to communicate securely with the respective APIs. Additionaly, for the case of the IoT, SC admin also needs to be able to communicate securely with the `POLICY STORE`.
+- The admin, in particular, needs to define the `ATTRIBUTE` which will require to be verified in order to participate in the pilots. Those `ATTRIBUTES` will have the following properties:
+  - `$autorizable_attribute_id`: Unique ID identiying the `ATTRIBUTE` (attribute susceptible to be validated via a credential)
+  - `$autorizable_attribute_info`: Group of `($attribute_info_key:($attibute_info_type, $attribute_info_value)` that the users will need to provide in order to obtain a credential. The contents of the `$attribute_info` (key,value)  pairs provided by the user, will be first enforced by the `APP` according to the `$attribute_info_type` speciffications and then enforced by the `CREDENTIAL ISSUER API SERVICE`, which will then will check wether the `$attribute_info_values` inputed by the user are present in the `$attribute_info_value_set`. For each pilot, those will be:
+    - DDDC: String CODE + Email & array of permitted codes and array of permitted emails (strings both).
+    - IOT: String CODE + username & array of permitted codes and array of permitted usernames (strings both). 
+  - `$credential_issuer_endpoint_address`: API endpoint with exposed methods. There will be **one credential issuer service per pilot**, packaged in Docker files and deployed either by each pilot or by Dyne (as DDDC currently is).
+  - `$credential_issuer_name`: Name to identify who is providing verification for each credential (in this case, it will be DDDC (DDDC) and SmartCitizen (IoT) respectively).
+  - `$credential_issuer_unique_id`: Unique ID identifying the `CREDENTIAL ISSUER` associated with the credential, the mapping between `$credential_issuer_name` and `$credential_issuer_unique_id` is one to one.
+  - `$credential_issuer_public_keys`: Public keys generated by the `CREDENTIAL ISSUER` responsible for distributing the credentials, **there is one set of keys generated for each particular `ATTRIBUTE`**. The `CREDENTIAL ISSUER` is responsible to track and map each pair of keys to each `$authorizable_attribute_id` which identifies the `ATTRIBUTE` and its associated credentials.
+- The attributes to obtain verification for will be in the pilots:
+  - DDDC: "I have right to participate in petition `$petition_id`".
+  - IoT: "I belong to community `$community_id`.
+  > Note that the mapping `$community_id-$petition_id-$autorizable_attribute_id`is ONE TO ONE. In those notes, we will use `$autorizable_attribute_id` for generality.
+  > Note also that those sentences need be added by **string replacement** hardcoded on the zenroom codes by the app at the start of the coconut flow.
+- The `CREDENTIAL` will be used for login into the `BCNNOW DASHBOARD` as well as to decide eligibility to participate in pilot:
+  - DDDC: Right to sign petition in ledger for petition `$petition_id`
+  - IoT: Right to submit data to the encrypted data store for community `$community_id`
+- For the special case of the DDDC pilot, the `CREDENTIALS` will be issued once per unique values of `$attribute_info`, to preserve uniqueness of petition signatures. This means two things:
+   - **If the user loses the credential, she will not be allowed to obtain new credentials**
+   - **The `CREDENTIAL ISSUER` needs to keep track of the (HASHED) `$attribute_info` received arrays, and DENY credentials if one credential has been issued already to a requestes `$attribute_info` array (in the DDDC, a pair ('email':'ula@ulahop.com', 'code':'X23455') for instance.
+   
 
-Author: Oleguer Sagarra (Dribia) <ula@dribia.com>
+## Current Status:
+
+- API is implemented for a *single* attribute credential. **Puria is working to adapt to the multiple petitions/communities case**. In the following, we have the mapping:
+   - `·$petition_id / $community_id -> $authorizable_attribute_id -> $authorizable_attribute_credential_issuer_keypairs`. That is, there is a keypair generated by the CREDENTIAL issuer per `ATTRIBUTE`(identified by `$authorizable_attribute_id`).
+   - It also means, that whenever **we use credentials for authorization, for instance in the `BCNNOW DASHBOARD`, the credential need to be passed along with meta data containing the  `$credential_issuer_endpoint_address` and the `$authorizable_attribute_id` in order for the VERIFIER (the DASBOARD in this case) to retreive the public keys and execute the zenroom verification script**. See step 8 in [COCONUT flow](https://github.com/DECODEproject/dddc-pilot-contracts).
+
+
+## Set-up Logic
+
+
+### Credential issuer, policy setup and log-in setup (both pilots)
+
+
+1. `PILOT ADMIN` defines an `ATTRIBUTE` via the set (variable) `$autorizable_attribute_info` for which the credential issuer will be able to issue a `CREDENTIAL` confirming their validity for a participant in the Pilot. The `CREDENTIAL` will validate the `ATTRIBUTE` defined above for each pilot.
+
+2. `PILOT ADMIN` receives a `$credential_issuer_authorization_token` which allows them to issue data creation requests to the credential issuer API service (defined by `$credential_issuer_endpoint_address`).
+
+> @Rohit Set here the step where PILOT ADMIN gets a token to communicate with Dashboard
+
+3. `PILOT ADMIN` makes a POST call, including the `$credential_issuer_authorization_token` as an Authorization header to create a new `AUTHORIZABLE_ATTRIBUTE` sending over the defined attributes via a data structure called `$authorizable_attribute_info`. An `AUTHORIZABLE_ATTRIBUTE` is a record stored by the credential issuer that defines the `ATTRIBUTES` for which the credential issuer will issue credentials. The API returns a `$autorizable_attribute_id` that will be use to identify the credential associated with the attribute issued by this credential issuer. The request must include a special field `$authorizable_attribute_unique` which is a Bool Value specifying if the credential issuer must keep track or not of the provided credentials (see below). **For IoT case `$authorizable_attribute_unique=False` and for DDDC case `$authorizable_attribute_unique=True`**.
+
+4. The credential service receives the POST request, verifies its validity and saves the record, and returns an `$authorizable_attribute_id` which uniquely identifies the attribute/community and is mapped to the `$autorizable_attribute_id`, which is mapped respectively to the `$community_id` and `$petition_id` for each pilot. Also, the credential issuer HASHES the `athorizable_attribute_info_set` (the set of valid values for the `$authorizable_attribute_info`), which will be used for census check. (In the pilot cases, a set of valid usernames/emails and a set of valid alphanumeric codes). Last but not least, the credential issuer service generates a PAIR of keys and stores them and assigns them to the `$authorizable_attribute_id` (step 3-4 of the COCONUT flow). It also creates a new endpoint `$credential_issuer_endpoint_address/authorizable_attribute_id` where you can get back in a public way via GET request the `$authorizable_attribute_info` types and keys (in our case, the field "email" and "code" and the type string) as well as the public keys needed to verify the credentials for this `$authorizable_attribute_id` (in our case, community/petition).
+
+5. (**IoT speciffic**) Community admin creates an `ENTITLEMENT POLICY` and links it to a community, which defines a set of operations for the community. In addition to the configuration previously defined for a community, we also add a `$credential_issuer_endpoint_address`, the `$authorizable_attribute_id`, and the `$authorizable_attributes_info` fields. These fields are required so that the app knows how to obtain credentials for the community. This community is written to the policy store which stores the community configuration and creates a unique `$community_id` for it.
+
+
+6. Community admin define name for community/petition, issues a post to Dashboards API and specifies the `ATTRIBUTE` needed to access each dashboard, identified by a `$autorizable_attribute_id` as well as a `$community_id/petition_id` and the `$credential_issuer_endpoint_address`. For both pilots it uses two different endpoints:
+  - IoT: Dashboard links it to `$autorizable_attribute_id` number and gives public key back to community admin and a `$bcn_now_community_id` (for internal mapping to the attribute_id). 
+  - DDDC: Dashboard links it to `$autorizable_attribute_id` number and a `$bcn_now_community_id`. 
+
+  > TO NOTE: A given `$community_id/petition_id` can be associated to one and only one `$authorizable_attribute_id`. Any service should be able to store and make this mapping (`$community_id/petition_id` to `$policy_id` [IOT case] to `authorizable_attribute_id` to `bcn_now_dashboard_id` with a DB via a many to one relationship table or something of the sort.
+
+7. Upon receiving a request, the `BCNNOW DASHBOARD` parses the (authorized) request, and generates a `$bcnnow_id` mapped to each `$community_id/petition_id` which is mapped also to the `$authorizable_attribute_id`. It then queries the `$credential_issuer_endpoint_address/$authorizable_attribute_id` to obtain the public keys needed to verify credentials for the given petition/community. 
+
+### Credential issuing
+
+#### IoT
+
+1. User goes through the onboarding application of SC which collects the geolocation and the exposure of the device.
+2. In the middle of the onboarding, user is prompted to install DECODE app as will be needed to complete flow.
+3. Onboarding application generates QR code containing the device token, geolocation and exposure and `$action=iot-onboarding` so the APP knows what screen to show.
+
+> _@ULA could you check this is ok?_ Example QR Code URI: 
+		`decodeapp://?action=iot-onboarding&device_token=1f5e66&latitude=&exposure=indoor&lat=41.396867&lng=2.194351`
+    Looks good to me. Should be validated by @jordi / @sam.
+
+4. App queries policystore for list of `$community_config` values, that specify the available communities.The returned list contains the community description, its associated policy, a list of its operations and importantly the `$credential_issuer_endpoint_address`, `$authorizable_attribute_id` and `$authorizable_attribute_info` fields.
+5. The user chooses a community to join with their device via app UI.
+6. App generates a keypair, step `01-CITIZEN-request-keypair.zencode` in coconut flow.
+7. App queries the `$credential_issuer_endpoint_address/$authorizable_attribute_id` and gets information on the `$authorizable_attribute_info` fields and types.
+8. App then presents a UI to the user that allows them to enter the values required for the `$authorizable_attribute_info`.
+9. User inputs the information and validates the types.
+10. At this point the app executes step `02-CITIZEN-request-blind-signature.zencode` of the coconut flow. Before this, it needs to string hard-core substitute the sentence `I declare that i belong to $community_id`.
+11. App issues a request to the `$credential_issuer_endpoint_address` i.e. a URL that uses the `$authorizable_attribute_id` to identify the attribute and including the `$authorizable_attribute_info` in the request body as well as the output of step 2 of the COCONUT flow.
+12. The credential issuer receives the request, parses the incoming data and does the following (case `$authorizable_attribute_unique=False`):
+  * Checks each of the fields presented by the user are in the `$authorizable_attribute_info_set`. If all are valid, then proceeds. Otherwise, throws an identification error back at the app.
+  * If previous step is satisfactory, it executes step `05-CREDENTIAL_ISSUER-credential-blind-signature.zencode` in the COCONUT flow. And returns the output to the app.
+13. App also executes the Zencode script (`07-CITIZEN-blind-proof-credential.zencode`), which also is stored ready to be presented to anyone needed to check its validity.
+10. App makes call to stream encoder component to create the new encrypted stream (as per existing IoT pilot flow)
+
+#### DDDC
+> For earlier notes and considerations, see [pad](https://pad.dyne.org/code/#/1/edit/zt-wonMAuz8+rMAgAe+0ow/gFxVI9wkVdD-x7X7Fn5TsTYa/).
+
+1. User installs DECODE App and sets up desired data.
+2. User goes to DDDC website visits petition she is interested in signing. Clicks on the link (mobile navigation) or scans QR (desktop navitaion).
+3. App is triggered, the QR encodes information about the petition via a `$petition_id`. The app queries the `DDDC GraphQL API` for peittion info via the `$petition_id`. It gets back information about the peittion, in particular the `$authorizable_attribute_id` and `$credential_issuer_endpoint_address` associated with the petition.
+4. The user is asked via APP UI to obtain a credential to participate in the petition. To which the user agrees.
+5. App generates a keypair, step `01-CITIZEN-request-keypair.zencode` in coconut flow.
+6. App queries the `$credential_issuer_endpoint_address/$authorizable_attribute_id` and gets information on the `$authorizable_attribute_info` fields and types.
+7. App then presents a UI to the user that allows them to enter the values required for the `$authorizable_attribute_info`.
+8. User inputs the information and validates the types.
+9. At this point the app executes step `02-CITIZEN-request-blind-signature.zencode` of the coconut flow. Before this, it needs to string hard-core substitute the sentence `I declare that i can participate in $petition_id`.
+10. App issues a request to the `$credential_issuer_endpoint_address` (in the new method to be defined, which is a merge of the current methods `/blind_signature` and `/validate_attribute_info`) i.e. a URL that uses the `$authorizable_attribute_id` to identify the attribute and including the `$authorizable_attribute_info` in the request body as well as the output of step 2 of the COCONUT flow.
+11. The credential issuer receives the request, parses the incoming data and does the following (case `$authorizable_attribute_unique=True`):
+  * Checks each of the fields presented by the user are in the `$authorizable_attribute_info_set`. If all are valid, then proceeds. Otherwise, throws an identification error back at the app.
+  * Combines all of the inputed  `$authorizable_attribute_info` values and maps them via a HASH function to a `$autorizable_attribute_info_value_hash`.
+  * It checks wether the `$autorizable_attribute_info_value_hash` is on the Database of issued credentials. It it is, the **credential** is denied. It throws an error back to the app.
+  * If it is not, it is stored on the DB as a an entry `$autorizable_attribute_info_value_hash:$timestamp`.
+  * If all previous steps are satisfactory, it executes step `05-CREDENTIAL_ISSUER-credential-blind-signature.zencode` in the COCONUT flow. And returns the output to the app.
+12. App also executes the Zencode script (`07-CITIZEN-blind-proof-credential.zencode`), which also is stored ready to be presented to anyone needed to check its validity.
+
+
+### Dashboard log-in (both pilots)
+
+1. The user goes to the BCNNow dashboard and attempts to access a restricted dashboard.
+2. The BCNNow app knows the dashboard is restricted, so instead of showing the dashboard, redirects the user to a login screen that shows a QR code and has a message instructing the user to scan the QR code in order to login. This QR code defines a URL of the following form: `decodeapp://?sessionId=9876&callback=http://bcnnow.decodeproject.eu/wallet-login&action=login`. If user is accessing from Mobile, the QR is a button with the same link. `$sessionId` would be a  unique ID generated for every call to Login.
+
+3. The user opens their app, and scans the QR code, which set a `$action=login` or presses the button.
+
+4. The app displays a UI where the user can confirm they wish to share their credentials (each of which is associated with a `$authorizable_attribute_id`) with the dashboard from a list of credentials. The user can also choose which data he/she wants to share with the dashboard to personalize her experience.
+5. If the user agrees, then the app sends a POST request back to the callback URL containing the previously created blind proof credential to the dashboard, as well as the reference `$authorizable_attribute_id` and `$credential_issuer_endpoint_address`. It also contains extra information in a JSON file that allows to personalize the view.
+
+> Json structure to be shared by App team. The current API call and json structure is at the following doc https://docs.google.com/document/d/1oHHrE60Q5VCHumUO5Va1DbXDKKMY8aFSw9E6-zAH9Fk/edit?usp=sharing
+> PLEASE agree in unified vision and open a repo and document there.
+
+> ROHIT please make this call asynchronous (get the keys and all of that)
+6. The dashboard queries or gets from internal DB the credential issuer public keys associated with a given `$authorizable_attribute_id` from the provided `$credential_issuer_endpoint_address`. The dashboard executes the Zencode script (08-VERIFIER-verify-blind-proof-credential.zencode), which is able to check that the blind credential is valid. This script requires a `$autorizable_attribute_id` passed earlier by the app. The dashboard then queries the `$credential_issuer_endpoint_address` and asks for the `$validation_keys` that are the input of the needed script to validate the credentials.
+
+7. If the credential is valid then the dashboard creates a new session for the user, and logs them in, redirecting to the requested dashboard. Either on the same device (if it is on the phone) or via callback on the browser
+
+> Potentially add step 8. for log-in using a PC browser and an aPP to notify user all is good. @Jordi?
+
+
+<media-tag src="/blob/6b/6b25946cba8ae40167ce06749a56a2c73c07e21610eb0049" data-crypto-key="cryptpad:7ED5IPQKTJyrZ3z51xD8CbRmDoxrqnSZzmo453eJWHQ="></media-tag>
+Source: https://docs.google.com/presentation/d/1UVeYiP4KQ2yFgUq6O2Y0NwE_g7kZfCKb6THeb3vYajg/edit
+
+
+# Credits
+
+Authors: Oleguer Sagarra (Dribia) with edits from Sam Mulube (Thingful), and Rohit Kumar (Eurecat)
