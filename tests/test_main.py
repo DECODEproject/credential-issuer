@@ -190,6 +190,60 @@ def test_credential():
     assert r.json() is not None
 
 
+def test_fake_value_attr_credential():
+    client = TestClient(api)
+    aaid = "".join(random.choice(string.ascii_letters) for i in range(10))
+    info = [
+        dict(value_set=["some val 1", "five", "love"], name="name_1", type="int"),
+        dict(value_set=["3"], name="name_2", type="str"),
+    ]
+    insert = client.post(
+        "/authorizable_attribute",
+        json={
+            "authorizable_attribute_id": aaid,
+            "authorizable_attribute_info": info,
+            "reissuable": False,
+        },
+        headers={"Authorization": "Bearer %s" % auth()},
+    )
+
+    assert insert.status_code == 201
+    keys = ZenContract(CONTRACTS.CITIZEN_KEYGEN).execute()
+    contract = ZenContract(CONTRACTS.CITIZEN_REQ_BLIND_SIG)
+    contract.keys(keys)
+    blind_sign_request = contract.execute()
+    values = [dict(name="some_fake_name", value="love"), dict(name="name_2", value="3")]
+
+    r = client.post(
+        "/credential",
+        json={
+            "authorizable_attribute_id": aaid,
+            "values": values,
+            "blind_sign_request": json.loads(blind_sign_request),
+        },
+    )
+
+    assert r.status_code == 412
+    assert r.json()["detail"] == "Missing mandatory value 'name_1'"
+
+    values = [
+        dict(name="some_fake_name", value="some_fake_value"),
+        dict(name="name_2", value="3"),
+    ]
+
+    r = client.post(
+        "/credential",
+        json={
+            "authorizable_attribute_id": aaid,
+            "values": values,
+            "blind_sign_request": json.loads(blind_sign_request),
+        },
+    )
+
+    assert r.status_code == 412
+    assert r.json()["detail"] == "Missing mandatory value 'name_1'"
+
+
 def test_credential_missing_value():
     client = TestClient(api)
     aaid = "".join(random.choice(string.ascii_letters) for i in range(10))

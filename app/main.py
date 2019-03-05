@@ -66,7 +66,9 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.utcnow() + timedelta(
+            minutes=config.getint("ACCESS_TOKEN_EXPIRE_MINUTES")
+        )
     to_encode.update({"exp": expire, "sub": config.get("TOKEN_SUBJECT")})
     keypair = json.loads(load_keypair())
     secret = keypair["issuer_identifier"]["sign"]["x"]

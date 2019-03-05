@@ -19,11 +19,6 @@ class AuthorizableAttribute(Base):
     def by_aa_id(cls, aa_id):
         return DBSession.query(cls).filter_by(authorizable_attribute_id=aa_id).first()
 
-    @property
-    def value_set(self):
-        aa_info = json.loads(self.authorizable_attribute_info)
-        return set([(k, v) for _ in aa_info for k, v in _.items()])
-
     def value_by_name(self, name):
         info = json.loads(self.authorizable_attribute_info)
         info = [json.loads(_) for _ in info]
@@ -31,9 +26,6 @@ class AuthorizableAttribute(Base):
 
     def value_is_valid(self, name, value):
         info = self.value_by_name(name)
-        if not info:
-            return False
-
         return value in info["value_set"]
 
     @property
@@ -79,5 +71,5 @@ class ValidatedCredentials(Base):
 Base.metadata.create_all(bind=engine)
 
 
-def init_models(_engine):
+def init_models(_engine):  # pragma: no cover
     Base.metadata.create_all(bind=_engine)
