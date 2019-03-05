@@ -145,6 +145,7 @@ def authorizable_attribute(
         authorizable_attribute_info=json.dumps(info),
         keypair=keypair,
         verification_key=verification_key,
+        reissuable=item.reissuable,
     )
 
     try:

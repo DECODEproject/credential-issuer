@@ -81,6 +81,7 @@ def test_authorizable_attribute():
         json={
             "authorizable_attribute_id": aaid,
             "authorizable_attribute_info": aa_info,
+            "reissuable": False,
         },
         headers={"Authorization": "Bearer %s" % auth()},
     )
@@ -100,6 +101,7 @@ def test_aa_duplicate():
         json={
             "authorizable_attribute_id": aaid,
             "authorizable_attribute_info": aa_info,
+            "reissuable": False,
         },
         headers={"Authorization": "Bearer %s" % auth()},
     )
@@ -110,6 +112,7 @@ def test_aa_duplicate():
         json={
             "authorizable_attribute_id": aaid,
             "authorizable_attribute_info": aa_info,
+            "reissuable": False,
         },
         headers={"Authorization": "Bearer %s" % auth()},
     )
@@ -128,6 +131,7 @@ def test_get_authorizable_attribute():
             "authorizable_attribute_info": [
                 {"name": "super_long_key", "type": "str", "value_set": ["miao"]}
             ],
+            "reissuable": False,
         },
         headers={"Authorization": "Bearer %s" % auth()},
     )
@@ -158,7 +162,11 @@ def test_credential():
     ]
     insert = client.post(
         "/authorizable_attribute",
-        json={"authorizable_attribute_id": aaid, "authorizable_attribute_info": info},
+        json={
+            "authorizable_attribute_id": aaid,
+            "authorizable_attribute_info": info,
+            "reissuable": False,
+        },
         headers={"Authorization": "Bearer %s" % auth()},
     )
 
@@ -191,7 +199,11 @@ def test_credential_missing_value():
     ]
     insert = client.post(
         "/authorizable_attribute",
-        json={"authorizable_attribute_id": aaid, "authorizable_attribute_info": info},
+        json={
+            "authorizable_attribute_id": aaid,
+            "authorizable_attribute_info": info,
+            "reissuable": False,
+        },
         headers={"Authorization": "Bearer %s" % auth()},
     )
 
@@ -224,7 +236,11 @@ def test_no_double_issuing_credential():
     ]
     insert = client.post(
         "/authorizable_attribute",
-        json={"authorizable_attribute_id": aaid, "authorizable_attribute_info": info},
+        json={
+            "authorizable_attribute_id": aaid,
+            "authorizable_attribute_info": info,
+            "reissuable": False,
+        },
         headers={"Authorization": "Bearer %s" % auth()},
     )
 
@@ -260,6 +276,56 @@ def test_no_double_issuing_credential():
     assert r.json()["detail"] == "Credential already issued"
 
 
+def test_reissuable_credential():
+    client = TestClient(api)
+    aaid = "".join(random.choice(string.ascii_letters) for i in range(10))
+    info = [
+        dict(value_set=["some val 1", "five", "love"], name="name_1", type="int"),
+        dict(value_set=["3"], name="name_2", type="str"),
+    ]
+    insert = client.post(
+        "/authorizable_attribute",
+        json={
+            "authorizable_attribute_id": aaid,
+            "authorizable_attribute_info": info,
+            "reissuable": True,
+        },
+        headers={"Authorization": "Bearer %s" % auth()},
+    )
+
+    assert insert.status_code == 201
+    keys = ZenContract(CONTRACTS.CITIZEN_KEYGEN).execute()
+    contract = ZenContract(CONTRACTS.CITIZEN_REQ_BLIND_SIG)
+    contract.keys(keys)
+    blind_sign_request = contract.execute()
+    values = [dict(name="name_1", value="love"), dict(name="name_2", value="3")]
+
+    r = client.post(
+        "/credential",
+        json={
+            "authorizable_attribute_id": aaid,
+            "values": values,
+            "blind_sign_request": json.loads(blind_sign_request),
+        },
+    )
+
+    assert r.status_code == 200
+    first_result = r.json()
+    assert first_result is not None
+
+    r = client.post(
+        "/credential",
+        json={
+            "authorizable_attribute_id": aaid,
+            "values": values,
+            "blind_sign_request": json.loads(blind_sign_request),
+        },
+    )
+
+    assert r.status_code == 200
+    assert r.json() == first_result
+
+
 def test_no_found_aa_for_credential():
     client = TestClient(api)
     keys = ZenContract(CONTRACTS.CITIZEN_KEYGEN).execute()
@@ -292,6 +358,7 @@ def test_non_validate_attribute_info():
                     value_set=["some val 1", "five", "love"], name="name_1", type="int"
                 )
             ],
+            "reissuable": False,
         },
         headers={"Authorization": "Bearer %s" % auth()},
     )

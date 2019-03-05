@@ -140,6 +140,14 @@ This will create the rules to allow people to obtain a credential. Each credenti
 will have it's own keypair (in form of a Credential Issuer Keypair, Coconut flow 03)
 and the public `verification_key` will be printed as a result
 
+
+**IoT vs. DDDC** the real difference between the two use-cases is to allowing reissue the credentials
+for the same user. To differenciate this behaviout each Authorizable Attibute has a boolean parameter `reissuable`
+that should be passed. IoT want to pass it as `true` to allow reissuing of the credentials.
+
+
+
+
 #### /authorizable_attribute/{authorizable_attribute_id}
 
 This allows to retrieve the Authorizable Attibute by the `authorizable_attribute_id`

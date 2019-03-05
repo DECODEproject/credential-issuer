@@ -17,26 +17,14 @@ class AuthorizableAttributeInfo(BaseModel):
 class AuthorizableAttributeSchema(BaseModel):
     authorizable_attribute_id: str
     authorizable_attribute_info: List[AuthorizableAttributeInfo]
-    reissuable: bool = False
+    reissuable: bool
 
 
 class AuthorizableAttributeOutput(BaseModel):
     authorizable_attribute_id: str
     authorizable_attribute_info: List[Dict]
     verification_key: Dict
-
-
-# class VerifyOutput(BaseModel):
-#     beta: str
-#     alpha: str
-#
-#
-# class VerificationOutput(BaseModel):
-#     verification_key: VerifyOutput
-#
-#
-# class VerificationKeyOutput(BaseModel):
-#     issuer_identifier: VerificationOutput
+    reissuable: bool
 
 
 class AuthorizableAttributeInfoValue(BaseModel):

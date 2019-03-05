@@ -51,6 +51,7 @@ class AuthorizableAttribute(Base):
             "authorizable_attribute_id": self.authorizable_attribute_id,
             "authorizable_attribute_info": self.value_name_type,
             "verification_key": json.loads(self.verification_key),
+            "reissuable": self.reissuable,
         }
 
 
