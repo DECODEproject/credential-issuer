@@ -17,6 +17,7 @@ class AuthorizableAttributeInfo(BaseModel):
 class AuthorizableAttributeSchema(BaseModel):
     authorizable_attribute_id: str
     authorizable_attribute_info: List[AuthorizableAttributeInfo]
+    reissuable: bool = False
 
 
 class AuthorizableAttributeOutput(BaseModel):
@@ -79,3 +80,4 @@ class ValidateAuthorizableAttributeInfoInput(BaseModel):
 class UidOutput(BaseModel):
     verification_key: Dict
     credential_issuer_id: str
+    authorizable_attribute_id: str

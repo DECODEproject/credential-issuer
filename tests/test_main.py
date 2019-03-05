@@ -91,6 +91,33 @@ def test_authorizable_attribute():
     assert "super_long_key" in attrib.authorizable_attribute_info
 
 
+def test_aa_duplicate():
+    client = TestClient(api)
+    aaid = "".join(random.choice(string.ascii_lowercase) for i in range(10))
+    aa_info = [{"name": "super_long_key", "type": "str", "value_set": ["miao"]}]
+    r = client.post(
+        "/authorizable_attribute",
+        json={
+            "authorizable_attribute_id": aaid,
+            "authorizable_attribute_info": aa_info,
+        },
+        headers={"Authorization": "Bearer %s" % auth()},
+    )
+    assert r.status_code == 201
+
+    r = client.post(
+        "/authorizable_attribute",
+        json={
+            "authorizable_attribute_id": aaid,
+            "authorizable_attribute_info": aa_info,
+        },
+        headers={"Authorization": "Bearer %s" % auth()},
+    )
+
+    assert r.status_code == 409
+    assert r.json()["detail"] == "Duplicate Authorizable Attribute Id"
+
+
 def test_get_authorizable_attribute():
     client = TestClient(api)
     aaid = "".join(random.choice(string.ascii_lowercase) for i in range(10))
@@ -153,6 +180,104 @@ def test_credential():
 
     assert r.status_code == 200
     assert r.json() is not None
+
+
+def test_credential_missing_value():
+    client = TestClient(api)
+    aaid = "".join(random.choice(string.ascii_letters) for i in range(10))
+    info = [
+        dict(value_set=["some val 1", "five", "love"], name="name_1", type="int"),
+        dict(value_set=["3"], name="name_2", type="str"),
+    ]
+    insert = client.post(
+        "/authorizable_attribute",
+        json={"authorizable_attribute_id": aaid, "authorizable_attribute_info": info},
+        headers={"Authorization": "Bearer %s" % auth()},
+    )
+
+    assert insert.status_code == 201
+    keys = ZenContract(CONTRACTS.CITIZEN_KEYGEN).execute()
+    contract = ZenContract(CONTRACTS.CITIZEN_REQ_BLIND_SIG)
+    contract.keys(keys)
+    blind_sign_request = contract.execute()
+    values = [dict(name="name_1", value="love")]
+
+    r = client.post(
+        "/credential",
+        json={
+            "authorizable_attribute_id": aaid,
+            "values": values,
+            "blind_sign_request": json.loads(blind_sign_request),
+        },
+    )
+
+    assert r.status_code == 412
+    assert r.json()["detail"] == "Missing mandatory value 'name_2'"
+
+
+def test_no_double_issuing_credential():
+    client = TestClient(api)
+    aaid = "".join(random.choice(string.ascii_letters) for i in range(10))
+    info = [
+        dict(value_set=["some val 1", "five", "love"], name="name_1", type="int"),
+        dict(value_set=["3"], name="name_2", type="str"),
+    ]
+    insert = client.post(
+        "/authorizable_attribute",
+        json={"authorizable_attribute_id": aaid, "authorizable_attribute_info": info},
+        headers={"Authorization": "Bearer %s" % auth()},
+    )
+
+    assert insert.status_code == 201
+    keys = ZenContract(CONTRACTS.CITIZEN_KEYGEN).execute()
+    contract = ZenContract(CONTRACTS.CITIZEN_REQ_BLIND_SIG)
+    contract.keys(keys)
+    blind_sign_request = contract.execute()
+    values = [dict(name="name_1", value="love"), dict(name="name_2", value="3")]
+
+    r = client.post(
+        "/credential",
+        json={
+            "authorizable_attribute_id": aaid,
+            "values": values,
+            "blind_sign_request": json.loads(blind_sign_request),
+        },
+    )
+
+    assert r.status_code == 200
+    assert r.json() is not None
+
+    r = client.post(
+        "/credential",
+        json={
+            "authorizable_attribute_id": aaid,
+            "values": values,
+            "blind_sign_request": json.loads(blind_sign_request),
+        },
+    )
+
+    assert r.status_code == 412
+    assert r.json()["detail"] == "Credential already issued"
+
+
+def test_no_found_aa_for_credential():
+    client = TestClient(api)
+    keys = ZenContract(CONTRACTS.CITIZEN_KEYGEN).execute()
+    contract = ZenContract(CONTRACTS.CITIZEN_REQ_BLIND_SIG)
+    contract.keys(keys)
+    blind_sign_request = contract.execute()
+    values = [dict(name="name_1", value="love"), dict(name="name_2", value="3")]
+
+    r = client.post(
+        "/credential",
+        json={
+            "authorizable_attribute_id": "FAKE ID",
+            "values": values,
+            "blind_sign_request": json.loads(blind_sign_request),
+        },
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "Authorizable Attribute not found"
 
 
 def test_non_validate_attribute_info():

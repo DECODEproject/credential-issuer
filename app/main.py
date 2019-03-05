@@ -19,7 +19,7 @@ from starlette.status import (
 
 from app.config.config import BaseConfig
 from app.database import DBSession
-from app.models import AuthorizableAttribute
+from app.models import AuthorizableAttribute, ValidatedCredentials
 from app.schema import (
     TokenOutput,
     AuthorizableAttributeOutput,
@@ -130,6 +130,7 @@ def authorizable_attribute(
                     "value_set": ["08001", "08002", "08003", "08004", "08005", "08006"],
                 },
             ],
+            "reissuable": False,
         },
     ),
     token: str = Security(oauth2_scheme),
@@ -158,6 +159,7 @@ def authorizable_attribute(
     return {
         "verification_key": json.loads(verification_key),
         "credential_issuer_id": config.get("uid"),
+        "authorizable_attribute_id": aa.authorizable_attribute_id,
     }
 
 
@@ -219,8 +221,18 @@ async def credential(
         raise HTTPException(
             status_code=HTTP_404_NOT_FOUND, detail="Authorizable Attribute not found"
         )
-    sent_values = [json.loads(_.json()) for _ in item.values]
+
+    sent_values = sorted(
+        [json.loads(_.json()) for _ in item.values], key=lambda k: k["name"]
+    )
     sent_names = [_["name"] for _ in sent_values]
+
+    if not aa.reissuable:
+        if ValidatedCredentials.exists(aa.authorizable_attribute_id, sent_values):
+            raise HTTPException(
+                status_code=HTTP_412_PRECONDITION_FAILED,
+                detail="Credential already issued",
+            )
 
     for name in aa.value_names:
         if name not in sent_names:
@@ -239,7 +251,14 @@ async def credential(
     contract = ZenContract(CONTRACTS.BLIND_SIGN)
     contract.keys(aa.keypair)
     contract.data(item.blind_sign_request.json())
-    return json.loads(contract.execute())
+    credential_result = contract.execute()
+    if not aa.reissuable:
+        vc = ValidatedCredentials(
+            aaid=aa.authorizable_attribute_id, value=json.dumps(sent_values)
+        )
+        DBSession.add(vc)
+        DBSession.commit()
+    return json.loads(credential_result)
 
 
 @api.get(
