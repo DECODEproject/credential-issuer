@@ -86,7 +86,9 @@ def token(form_data: OAuth2PasswordRequestForm = Depends()):
     username = form_data.username
     password = form_data.password
 
-    if username != "demo" or password != "demo":
+    if username != config.get("AUTH_USERNAME") or password != config.get(
+        "AUTH_PASSWORD"
+    ):
         raise HTTPException(status_code=400, detail="Incorrect username or password")
 
     access_token_expires = timedelta(
