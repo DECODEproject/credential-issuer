@@ -142,7 +142,7 @@ def authorizable_attribute(
     info = [_.json() for _ in item.authorizable_attribute_info]
     keypair = generate_secret_key()
     contract = ZenContract(CONTRACTS.PUBLIC_VERIFY)
-    contract.keys(load_keypair())
+    contract.keys(keypair)
     verification_key = contract.execute()
     aa = AuthorizableAttribute(
         authorizable_attribute_id=item.authorizable_attribute_id,
