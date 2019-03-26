@@ -56,7 +56,7 @@ class AuthorizableAttribute(Base):
     @property
     def optional_value_name_type(self):
         aa_info = json.loads(self.authorizable_attribute_info_optional)
-        return [{json.loads(_)["name"]: json.loads(_)["type"]} for _ in aa_info]
+        return [json.loads(_) for _ in aa_info]
 
     @property
     def optionals(self):

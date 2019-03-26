@@ -28,7 +28,7 @@ class AuthorizableAttributeSchema(BaseModel):
 class AuthorizableAttributeOutput(BaseModel):
     authorizable_attribute_id: str
     authorizable_attribute_info: List[Dict]
-    authorizable_attribute_info_optional: List[Dict]
+    authorizable_attribute_info_optional: List[AuthorizableAttributeInfo]
     verification_key: Dict
     reissuable: bool
 
