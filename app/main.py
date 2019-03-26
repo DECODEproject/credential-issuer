@@ -1,8 +1,6 @@
 from fastapi import FastAPI
 from app.config.config import BaseConfig
-from app.routers import authorizable_attribute
-from app.routers import security
-from app.routers import credential
+from app.routers import authorizable_attribute, stats, security, credential
 
 config = BaseConfig()
 
@@ -16,7 +14,7 @@ api = FastAPI(
 api.include_router(security.router)
 api.include_router(authorizable_attribute.router, prefix="/authorizable_attribute")
 api.include_router(credential.router, prefix="/credential")
-# api.include_router(stats.router, prefix="/stats")
+api.include_router(stats.router, prefix="/stats")
 
 
 @api.get(

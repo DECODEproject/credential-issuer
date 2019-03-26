@@ -1,7 +1,7 @@
 import json
 
 
-from sqlalchemy import Column, Integer, Unicode, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, Unicode, Boolean, ForeignKey, func
 from sqlalchemy.orm import relationship, backref
 
 from app.database import Base, engine, DBSession
@@ -28,15 +28,20 @@ class AuthorizableAttribute(Base):
     def value_by_name(self, name):
         return self._find_value_by_name(name, self.authorizable_attribute_info)
 
+    def value_option_by_name(self, name):
+        return self._find_value_by_name(name, self.authorizable_attribute_info_optional)
+
     def optional_k(self, name):
-        option = self._find_value_by_name(
-            name, self.authorizable_attribute_info_optional
-        )
+        option = self.value_option_by_name(name)
         return option["k"]
 
     def value_is_valid(self, name, value):
         info = self.value_by_name(name)
-        return value in info["value_set"]
+        optional = self.value_option_by_name(name)
+        is_optional = False
+        if optional:
+            is_optional = value in optional.get("value_set", [])
+        return value in info["value_set"] or is_optional
 
     @property
     def value_names(self):
@@ -51,7 +56,7 @@ class AuthorizableAttribute(Base):
     @property
     def optionals(self):
         optionals = json.loads(self.authorizable_attribute_info_optional)
-        return [{json.loads(_)["name"]: json.loads(_)["type"]} for _ in optionals]
+        return [json.loads(_)["name"] for _ in optionals]
 
     def publish(self):
         return {
@@ -82,6 +87,33 @@ class ValidatedCredentials(Base):
             .filter_by(value=json.dumps(value))
             .first()
         )
+
+
+class Statistics(Base):
+    uid = Column(Integer, primary_key=True, index=True)
+    name = Column(Unicode, nullable=False)
+    value = Column(Unicode, nullable=False)
+    aaid = Column(
+        Unicode, ForeignKey("authorizableattribute.aaid"), index=True, nullable=False
+    )
+    authorizable_attribute = relationship(
+        "AuthorizableAttribute", backref=backref("stats", cascade="all, delete-orphan")
+    )
+
+    @classmethod
+    def aggregate(cls):
+        result = {}
+        values = (
+            DBSession.query(cls.name, cls.value, func.count(cls.value))
+            .group_by(cls.name, cls.value)
+            .all()
+        )
+        for v in values:
+            existent_list = result.get(v[0], [])
+            existent_list.append({v[1]: v[2]})
+            result[v[0]] = existent_list
+
+        return result
 
 
 Base.metadata.create_all(bind=engine)

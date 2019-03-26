@@ -4,7 +4,7 @@ from fastapi import Body, HTTPException, APIRouter
 from starlette.status import HTTP_404_NOT_FOUND, HTTP_412_PRECONDITION_FAILED
 
 from app.database import DBSession
-from app.models import AuthorizableAttribute, ValidatedCredentials
+from app.models import AuthorizableAttribute, ValidatedCredentials, Statistics
 from app.schema import ValidateAuthorizableAttributeInfoInput
 from app.zencontract import ZenContract, CONTRACTS
 
@@ -43,6 +43,16 @@ def __check_mandatory_info_fields(aa, received_values):
             raise HTTPException(
                 status_code=HTTP_412_PRECONDITION_FAILED,
                 detail="Missing mandatory value '%s'" % name,
+            )
+
+
+def __check_optional_values(aa, received_optional_values):
+    received_names = [json.loads(_.json()) for _ in received_optional_values]
+    for name in received_names:
+        if name["name"] not in aa.optionals:
+            raise HTTPException(
+                status_code=HTTP_412_PRECONDITION_FAILED,
+                detail=f"Optional value '{name['name']}' is not valid",
             )
 
 
@@ -89,6 +99,7 @@ async def credential(
                 {"name": "zip_code", "value": "08001"},
                 {"name": "email", "value": "pablo@example.com"},
             ],
+            "optional_values": [{"name": "age", "value": "18-25"}],
         },
     )
 ):
@@ -105,5 +116,16 @@ async def credential(
             aaid=aa.authorizable_attribute_id, value=json.dumps(received_values)
         )
         DBSession.add(vc)
-        DBSession.commit()
+
+    __check_optional_values(aa, item.optional_values)
+    for option in item.optional_values:
+        option = json.loads(option.json())
+        s = Statistics(
+            aaid=aa.authorizable_attribute_id,
+            name=option["name"],
+            value=option["value"],
+        )
+        DBSession.add(s)
+
+    DBSession.commit()
     return json.loads(issued_credential)
