@@ -37,6 +37,7 @@ def test_credential(client):
         json={
             "authorizable_attribute_id": aaid,
             "values": values,
+            "optional_values": [],
             "blind_sign_request": json.loads(blind_sign_request),
         },
     )
@@ -74,6 +75,7 @@ def test_fake_value_attr_credential(client):
         json={
             "authorizable_attribute_id": aaid,
             "values": values,
+            "optional_values": [],
             "blind_sign_request": json.loads(blind_sign_request),
         },
     )
@@ -91,6 +93,7 @@ def test_fake_value_attr_credential(client):
         json={
             "authorizable_attribute_id": aaid,
             "values": values,
+            "optional_values": [],
             "blind_sign_request": json.loads(blind_sign_request),
         },
     )
@@ -128,6 +131,7 @@ def test_credential_missing_value(client):
         json={
             "authorizable_attribute_id": aaid,
             "values": values,
+            "optional_values": [],
             "blind_sign_request": json.loads(blind_sign_request),
         },
     )
@@ -165,6 +169,7 @@ def test_no_double_issuing_credential(client):
         json={
             "authorizable_attribute_id": aaid,
             "values": values,
+            "optional_values": [],
             "blind_sign_request": json.loads(blind_sign_request),
         },
     )
@@ -177,6 +182,7 @@ def test_no_double_issuing_credential(client):
         json={
             "authorizable_attribute_id": aaid,
             "values": values,
+            "optional_values": [],
             "blind_sign_request": json.loads(blind_sign_request),
         },
     )
@@ -214,6 +220,7 @@ def test_reissuable_credential(client):
         json={
             "authorizable_attribute_id": aaid,
             "values": values,
+            "optional_values": [],
             "blind_sign_request": json.loads(blind_sign_request),
         },
     )
@@ -227,6 +234,7 @@ def test_reissuable_credential(client):
         json={
             "authorizable_attribute_id": aaid,
             "values": values,
+            "optional_values": [],
             "blind_sign_request": json.loads(blind_sign_request),
         },
     )
@@ -247,6 +255,7 @@ def test_no_found_aa_for_credential(client):
         json={
             "authorizable_attribute_id": "FAKE ID",
             "values": values,
+            "optional_values": [],
             "blind_sign_request": json.loads(blind_sign_request),
         },
     )
@@ -298,6 +307,7 @@ def test_non_validate_attribute_info(client):
             "authorizable_attribute_id": aaid,
             "blind_sign_request": blind_sign_request,
             "values": [{"name": "name_1", "value": "miao"}],
+            "optional_values": [],
         },
         headers={"Authorization": "Bearer %s" % auth()},
     )

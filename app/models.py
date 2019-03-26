@@ -54,6 +54,11 @@ class AuthorizableAttribute(Base):
         return [{json.loads(_)["name"]: json.loads(_)["type"]} for _ in aa_info]
 
     @property
+    def optional_value_name_type(self):
+        aa_info = json.loads(self.authorizable_attribute_info_optional)
+        return [{json.loads(_)["name"]: json.loads(_)["type"]} for _ in aa_info]
+
+    @property
     def optionals(self):
         optionals = json.loads(self.authorizable_attribute_info_optional)
         return [json.loads(_)["name"] for _ in optionals]
@@ -62,7 +67,7 @@ class AuthorizableAttribute(Base):
         return {
             "authorizable_attribute_id": self.authorizable_attribute_id,
             "authorizable_attribute_info": self.value_name_type,
-            "authorizable_attribute_info_optional": self.optionals,
+            "authorizable_attribute_info_optional": self.optional_value_name_type,
             "verification_key": json.loads(self.verification_key),
             "reissuable": self.reissuable,
         }
@@ -104,14 +109,16 @@ class Statistics(Base):
     def aggregate(cls):
         result = {}
         values = (
-            DBSession.query(cls.name, cls.value, func.count(cls.value))
+            DBSession.query(cls.name, cls.value, func.count(cls.value), cls.aaid)
             .group_by(cls.name, cls.value)
             .all()
         )
         for v in values:
             existent_list = result.get(v[0], [])
             existent_list.append({v[1]: v[2]})
-            result[v[0]] = existent_list
+            aa = AuthorizableAttribute.by_aa_id(v[3])
+            if v[2] >= aa.optional_k(v[0]):
+                result[v[0]] = existent_list
 
         return result
 
