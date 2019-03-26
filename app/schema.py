@@ -14,9 +14,14 @@ class AuthorizableAttributeInfo(BaseModel):
     value_set: List[str]
 
 
+class AuthorizableAttributeInfoOptional(AuthorizableAttributeInfo):
+    k: int
+
+
 class AuthorizableAttributeSchema(BaseModel):
     authorizable_attribute_id: str
     authorizable_attribute_info: List[AuthorizableAttributeInfo]
+    authorizable_attribute_info_optional: List[AuthorizableAttributeInfoOptional]
     reissuable: bool
 
 

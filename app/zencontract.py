@@ -1,8 +1,9 @@
+from pathlib import Path
+
 from zenroom import zenroom
 from zenroom.zenroom import Error
 
 from app.config.config import BaseConfig
-from app.utils import get_contract
 
 
 class CONTRACTS:
@@ -32,7 +33,11 @@ class ZenContract(object):
         self._keys = None
         self._data = None
         self._error = None
-        self.zencode = get_contract(self.name)
+        self.zencode = self.get_contract()
+
+    def get_contract(self):
+        contracts_dir = Path(config.get("contracts_path"))
+        return contracts_dir.joinpath(self.name).read_text().encode()
 
     def execute(self):
         if config.getboolean("debug"):  # pragma: no cover
