@@ -52,7 +52,7 @@ class ZenContract(object):
             log.debug("KEYS: %s" % self.keys())
             log.debug("CODE: \n%s" % self.zencode.decode())
         try:
-            result, errors = zenroom.execute(
+            result, errors = zenroom.zencode(
                 self.zencode, keys=self._keys, data=self._data
             )
             self._error = errors
