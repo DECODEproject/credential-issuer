@@ -28,16 +28,20 @@ log = config.logger
 
 
 class ZenContract(object):
-    def __init__(self, name):
+    def __init__(self, name, placeholder={}):
         self.name = name
         self._keys = None
         self._data = None
         self._error = None
+        self.placeholder = placeholder
         self.zencode = self.get_contract()
 
     def get_contract(self):
         contracts_dir = Path(config.get("contracts_path"))
-        return contracts_dir.joinpath(self.name).read_text().encode()
+        contract = contracts_dir.joinpath(self.name).read_text()
+        for k, v in self.placeholder.items():
+            contract = contract.replace(f"'{k}'", f"'{v}'")
+        return contract.encode()
 
     def execute(self):
         if config.getboolean("debug"):  # pragma: no cover

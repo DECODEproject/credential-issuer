@@ -20,7 +20,11 @@ def load_keypair():
     if not keypair.is_file():
         log.info("CREATING KEYPAIR IN %s" % keypair.as_posix())
         keypair.touch()
-        keypair.write_text(ZenContract(CONTRACTS.GENERATE_KEYPAIR).execute())
+        keypair.write_text(
+            ZenContract(
+                CONTRACTS.GENERATE_KEYPAIR, {"issuer_identifier": config.get("uid")}
+            ).execute()
+        )
 
     if config.getboolean("debug"):  # pragma: no cover
         log.debug("+" * 50)
@@ -40,7 +44,7 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
         )
     to_encode.update({"exp": expire, "sub": config.get("TOKEN_SUBJECT")})
     keypair = json.loads(load_keypair())
-    secret = keypair["issuer_identifier"]["sign"]["x"]
+    secret = keypair[config.get("uid")]["sign"]["x"]
     encoded_jwt = jwt.encode(to_encode, secret, algorithm=config.get("ALGORITHM"))
     return encoded_jwt
 

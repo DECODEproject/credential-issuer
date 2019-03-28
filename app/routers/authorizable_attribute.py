@@ -67,8 +67,12 @@ def authorizable_attribute(
 ):
     info = [_.json() for _ in item.authorizable_attribute_info]
     optional = [_.json() for _ in item.authorizable_attribute_info_optional]
-    keypair = ZenContract(CONTRACTS.GENERATE_KEYPAIR).execute()
-    contract = ZenContract(CONTRACTS.PUBLIC_VERIFY)
+    keypair = ZenContract(
+        CONTRACTS.GENERATE_KEYPAIR, {"issuer_identifier": config.get("uid")}
+    ).execute()
+    contract = ZenContract(
+        CONTRACTS.PUBLIC_VERIFY, {"issuer_identifier": config.get("uid")}
+    )
     contract.keys(keypair)
     verification_key = contract.execute()
     aa = AuthorizableAttribute(

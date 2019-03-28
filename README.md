@@ -220,7 +220,11 @@ debug = true
 
 Copyright :copyright: 2019 by [Dyne.org](https://www.dyne.org) foundation, Amsterdam
 
-Designed, written and maintained by Puria Nafisi Azizi.
+Designed, written and maintained by Puria Nafisi Azizi [Dyne.org](https://www.dyne.org).
+ 
+With design contributions by Oleguer 'Ula' Sagarra [dribia.com](http://www.dribia.com).
+
+Special thanks to Denis 'Jaromil' Roio and Andrea D'Intino for their expert reviews.
 
 <img src="https://zenroom.dyne.org/img/ec_logo.png" class="pic" alt="Project funded by the European Commission">
 

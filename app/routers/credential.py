@@ -3,12 +3,14 @@ import json
 from fastapi import Body, HTTPException, APIRouter
 from starlette.status import HTTP_404_NOT_FOUND, HTTP_412_PRECONDITION_FAILED
 
+from app.config.config import BaseConfig
 from app.database import DBSession
 from app.models import AuthorizableAttribute, ValidatedCredentials, Statistics
 from app.schema import ValidateAuthorizableAttributeInfoInput
 from app.zencontract import ZenContract, CONTRACTS
 
 router = APIRouter()
+config = BaseConfig()
 
 
 def __get_aa(authorizable_attribute_id):
@@ -21,7 +23,9 @@ def __get_aa(authorizable_attribute_id):
 
 
 def __issue_credential(keypair, bsr):
-    contract = ZenContract(CONTRACTS.BLIND_SIGN)
+    contract = ZenContract(
+        CONTRACTS.BLIND_SIGN, {"issuer_identifier": config.get("uid")}
+    )
     contract.keys(keypair)
     contract.data(bsr)
     return contract.execute()
