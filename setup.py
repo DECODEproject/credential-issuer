@@ -9,7 +9,7 @@ setup(
     install_requires=[
         "fastapi==0.7.1",
         "pytest_runner==4.4",
-        "zenroom==0.1.2",
+        "zenroom==0.2.0",
         "pre-commit==1.14.4",
         "python-multipart==0.0.5",
         "pyjwt==1.7.1",
