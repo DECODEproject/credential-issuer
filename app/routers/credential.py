@@ -130,6 +130,7 @@ def credential(
             value=option["value"],
         )
         DBSession.add(s)
+        DBSession.commit()
 
     DBSession.commit()
     return json.loads(issued_credential)
