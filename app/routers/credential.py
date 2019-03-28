@@ -74,7 +74,7 @@ def __check_wrong_info_fields(aa, received_values):
     tags=["Credential issuing"],
     summary="If the values make the user eligible, the blind sign request is signed and a credential is issued",
 )
-async def credential(
+def credential(
     item: ValidateAuthorizableAttributeInfoInput = Body(
         ...,
         example={
