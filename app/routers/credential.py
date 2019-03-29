@@ -115,11 +115,10 @@ def credential(
     __check_mandatory_info_fields(aa, received_values)
     __check_wrong_info_fields(aa, received_values)
     issued_credential = __issue_credential(aa.keypair, item.blind_sign_request.json())
-    if not aa.reissuable:
-        vc = ValidatedCredentials(
-            aaid=aa.authorizable_attribute_id, value=json.dumps(received_values)
-        )
-        DBSession.add(vc)
+    vc = ValidatedCredentials(
+        aaid=aa.authorizable_attribute_id, value=json.dumps(received_values)
+    )
+    DBSession.add(vc)
 
     __check_optional_values(aa, item.optional_values)
     for option in item.optional_values:
@@ -130,7 +129,6 @@ def credential(
             value=option["value"],
         )
         DBSession.add(s)
-        DBSession.commit()
 
     DBSession.commit()
     return json.loads(issued_credential)
