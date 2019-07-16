@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from zenroom import zenroom
-from zenroom.zenroom import Error
 
 from app.config.config import BaseConfig
 
@@ -41,34 +40,32 @@ class ZenContract(object):
         contract = contracts_dir.joinpath(self.name).read_text()
         for k, v in self.placeholder.items():
             contract = contract.replace(f"'{k}'", f"'{v}'")
-        return contract.encode()
+        return contract
 
     def execute(self):
         if config.getboolean("debug"):  # pragma: no cover
             log.debug("+" * 50)
             log.debug("EXECUTING %s" % self.name)
             log.debug("+" * 50)
-            log.debug("DATA: %s" % self.data())
-            log.debug("KEYS: %s" % self.keys())
-            log.debug("CODE: \n%s" % self.zencode.decode())
-        try:
-            result, errors = zenroom.execute(
-                self.zencode, keys=self._keys, data=self._data
-            )
-            self._error = errors
-            return result.decode()
-        except Error:
-            return None
+            log.debug("DATA: %s" % self._data)
+            log.debug("KEYS: %s" % self._keys)
+            log.debug("CODE: \n%s" % self.zencode)
+
+        result, errors = zenroom.zencode_exec(
+            script=self.zencode, keys=self._keys, data=self._data
+        )
+        self._error = errors
+        return result
 
     def keys(self, keys=None):
         if keys:
-            self._keys = keys.encode()
-        return self._keys.decode() if self._keys else None
+            self._keys = keys
+        return self._keys
 
     def data(self, data=None):
         if data:
-            self._data = data.encode()
-        return self._data.decode() if self._data else None
+            self._data = data
+        return self._data
 
     def errors(self):
         return self._error

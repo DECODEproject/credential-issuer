@@ -8,9 +8,9 @@ setup(
     packages=find_packages(),
     install_requires=[
         "bunch==1.0.1",
-        "fastapi==0.7.1",
+        "fastapi==0.33.0",
         "pytest_runner==4.4",
-        "zenroom==0.2.5",
+        "zenroom==1.0.5",
         "pre-commit==1.14.4",
         "python-multipart==0.0.5",
         "pyjwt==1.7.1",
