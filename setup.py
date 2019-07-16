@@ -11,10 +11,10 @@ setup(
         "fastapi==0.33.0",
         "pytest_runner==4.4",
         "zenroom==1.0.5",
-        "pre-commit==1.14.4",
+        "pre-commit==1.17.0",
         "python-multipart==0.0.5",
         "pyjwt==1.7.1",
-        "sqlalchemy==1.3.1",
+        "sqlalchemy==1.3.5",
     ],
     tests_require=["pytest", "codecov", "requests", "pytest-cov"],
 )
