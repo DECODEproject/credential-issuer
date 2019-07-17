@@ -13,7 +13,7 @@ def test_config_base_logger():
 
 def test_config_get():
     config = BaseConfig()
-    assert config.get("uid") == "Credential Issuer 01"
+    assert config.get("uid") == "issuer_identifier"
 
 
 def test_config_getint():

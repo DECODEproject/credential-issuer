@@ -37,7 +37,7 @@ def test_authorizable_attribute(client):
     attrib = AuthorizableAttribute.by_aa_id(aaid)
     assert attrib is not None
     assert attrib.authorizable_attribute_id == aaid
-    assert r.json()["credential_issuer_id"] == "Credential Issuer 01"
+    assert r.json()["credential_issuer_id"] == "issuer_identifier"
     assert "super_long_key" in attrib.authorizable_attribute_info
 
 

@@ -7,7 +7,6 @@ from starlette.testclient import TestClient
 
 from app.config.config import BaseConfig
 from app.main import api
-from app.routers.security import load_keypair
 from app.zencontract import ZenContract, CONTRACTS
 
 
@@ -50,13 +49,6 @@ def remove_secret():
     secret = Path(bc.get("keypair"))
     if secret.is_file():
         secret.unlink()
-
-
-def test_secret_key_creation(remove_secret):
-    c = BaseConfig()
-    assert not Path(c.get("keypair")).is_file()
-    load_keypair()
-    assert Path(c.get("keypair")).is_file()
 
 
 def test_uid(client):

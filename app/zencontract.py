@@ -40,7 +40,7 @@ class ZenContract(object):
         contract = contracts_dir.joinpath(self.name).read_text()
         for k, v in self.placeholder.items():
             contract = contract.replace(f"'{k}'", f"'{v}'")
-        return contract
+        return str(contract)
 
     def execute(self):
         if config.getboolean("debug"):  # pragma: no cover
@@ -50,11 +50,13 @@ class ZenContract(object):
             log.debug("DATA: %s" % self._data)
             log.debug("KEYS: %s" % self._keys)
             log.debug("CODE: \n%s" % self.zencode)
-
-        result, errors = zenroom.zencode_exec(
-            script=self.zencode, keys=self._keys, data=self._data
-        )
-        self._error = errors
+        try:
+            result, errors = zenroom.zencode_exec(
+                script=self.zencode, keys=self._keys, data=self._data
+            )
+            self._error = str(errors)
+        except Exception:
+            log.exception("Zenroom contract exception", exc_info=True)
         return result
 
     def keys(self, keys=None):

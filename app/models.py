@@ -97,6 +97,10 @@ class ValidatedCredentials(Base):
     def total(cls):
         return DBSession.query(cls).count()
 
+    @classmethod
+    def total_by_aaid(cls, aaid):
+        return DBSession.query(cls).filter_by(aaid=aaid).count()
+
 
 class Statistics(Base):
     uid = Column(Integer, primary_key=True, index=True)
@@ -125,6 +129,26 @@ class Statistics(Base):
                 result[v[0]] = existent_list
 
         result["total"] = ValidatedCredentials.total()
+
+        return result
+
+    @classmethod
+    def by_aa(cls, aa):
+        result = {}
+        values = (
+            DBSession.query(cls.name, cls.value, func.count(cls.value), cls.aaid)
+            .filter_by(aaid=aa.authorizable_attribute_id)
+            .group_by(cls.name, cls.value)
+            .all()
+        )
+        for v in values:
+            existent_list = result.get(v[0], [])
+            existent_list.append({v[1]: v[2]})
+            if v[2] >= aa.optional_k(v[0]):
+                result[v[0]] = existent_list
+        result["total"] = ValidatedCredentials.total_by_aaid(
+            aa.authorizable_attribute_id
+        )
 
         return result
 
