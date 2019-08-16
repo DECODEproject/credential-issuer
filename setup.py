@@ -11,7 +11,7 @@ setup(
         "fastapi==0.33.0",
         "pytest_runner==4.4",
         "zenroom==1.0.6",
-        "pre-commit==1.17.0",
+        "pre-commit==1.18.2",
         "python-multipart==0.0.5",
         "pyjwt==1.7.1",
         "sqlalchemy==1.3.5",
