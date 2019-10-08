@@ -1,25 +1,25 @@
 from pathlib import Path
 
-from zenroom.zenroom import zencode_exec
+from zenroom.zenroom import zencode_exec, ZenroomException
 
 from app.config.config import BaseConfig
 
 
 class CONTRACTS:
-    GENERATE_KEYPAIR = "03-CREDENTIAL_ISSUER-keygen.zencode"
-    PUBLIC_VERIFY = "04-CREDENTIAL_ISSUER-publish-verifier.zencode"
-    BLIND_SIGN = "05-CREDENTIAL_ISSUER-credential-sign.zencode"
-    CITIZEN_KEYGEN = "01-CITIZEN-credential-keygen.zencode"
-    CITIZEN_REQ_BLIND_SIG = "02-CITIZEN-credential-request.zencode"
-    AGGREGATE_CREDENTIAL = "06-CITIZEN-aggregate-credential-signature.zencode"
-    PROVE_CREDENTIAL = "07-CITIZEN-prove-credential.zencode"
-    VERIFY_CREDENTIAL = "08-VERIFIER-verify-credential.zencode"
-    CREATE_PETITION = "09-CITIZEN-create-petition.zencode"
-    APPROVE_PETITION = "10-VERIFIER-approve-petition.zencode"
-    SIGN_PETITION = "11-CITIZEN-sign-petition.zencode"
-    INCREMENT_PETITION = "12-LEDGER-add-signed-petition.zencode"
-    TALLY_PETITION = "13-CITIZEN-tally-petition.zencode"
-    COUNT_PETITION = "14-CITIZEN-count-petition.zencode"
+    GENERATE_KEYPAIR = "issuer_keygen.zen"
+    PUBLIC_VERIFY = "publish_verifier.zen"
+    BLIND_SIGN = "issuer_sign.zen"
+    CITIZEN_KEYGEN = "credential_keygen.zen"
+    CITIZEN_REQ_BLIND_SIG = "create_request.zen"
+    AGGREGATE_CREDENTIAL = "aggregate_signature.zen"
+    PROVE_CREDENTIAL = "create_proof.zen"
+    VERIFY_CREDENTIAL = "verify_proof.zen"
+    CREATE_PETITION = "create_petition.zen"
+    APPROVE_PETITION = "approve_petition.zen"
+    SIGN_PETITION = "sign_petition.zen"
+    INCREMENT_PETITION = "aggregate_petition_signature.zen"
+    TALLY_PETITION = "tally_petition.zen"
+    COUNT_PETITION = "count_petition.zen"
 
 
 config = BaseConfig()
@@ -51,13 +51,12 @@ class ZenContract(object):
             log.debug("KEYS: %s" % self._keys)
             log.debug("CODE: \n%s" % self.zencode)
         try:
-            result, errors = zencode_exec(
+            result = zencode_exec(
                 script=self.zencode, keys=self._keys, data=self._data
             )
-            self._error = str(errors)
-        except Exception:
+        except ZenroomException:
             log.exception("Zenroom contract exception", exc_info=True)
-        return result
+        return result.stdout
 
     def keys(self, keys=None):
         if keys:
@@ -68,6 +67,3 @@ class ZenContract(object):
         if data:
             self._data = data
         return self._data
-
-    def errors(self):
-        return self._error

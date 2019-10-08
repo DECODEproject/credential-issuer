@@ -10,7 +10,7 @@ setup(
         "bunch==1.0.1",
         "fastapi==0.33.0",
         "pytest_runner==4.4",
-        "zenroom==1.0.6",
+        "zenroom==1.0.7rc0",
         "pre-commit==1.17.0",
         "python-multipart==0.0.5",
         "pyjwt==1.7.1",

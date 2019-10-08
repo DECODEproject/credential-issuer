@@ -27,24 +27,24 @@ def _smart_contract_check(smart_contract, expected):
     print(result)
     assert result, smart_contract.errors()
     for _ in expected:
-        assert _ in result, smart_contract.errors()
+        assert _ in result
 
 
 def test_execute():
-    expected = ["encoding", "x", "zenroom", "sign", "schema", "curve"]
+    expected = "zenroom MadHatter".split()
     contract = ZenContract(CONTRACTS.GENERATE_KEYPAIR)
     _smart_contract_check(contract, expected)
 
 
 def test_issuer_public():
-    expected = "issuer_identifier verify beta alpha".split()
+    expected = "zenroom MadHatter".split()
     contract = ZenContract(CONTRACTS.PUBLIC_VERIFY)
     contract.keys(ZenContract(CONTRACTS.GENERATE_KEYPAIR).execute())
     _smart_contract_check(contract, expected)
 
 
 def test_keygen():
-    expected = "identifier public private".split()
+    expected = "zenroom Alice".split()
     contract = ZenContract(CONTRACTS.CITIZEN_KEYGEN)
     _smart_contract_check(contract, expected)
 

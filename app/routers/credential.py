@@ -24,7 +24,7 @@ def __get_aa(authorizable_attribute_id):
 
 def __issue_credential(keypair, bsr):
     contract = ZenContract(
-        CONTRACTS.BLIND_SIGN, {"issuer_identifier": config.get("uid")}
+        CONTRACTS.BLIND_SIGN, {"MadHatter": config.get("uid")}
     )
     contract.keys(keypair)
     contract.data(bsr)
@@ -114,7 +114,7 @@ def credential(
     __validate_reissuing(aa, received_values)
     __check_mandatory_info_fields(aa, received_values)
     __check_wrong_info_fields(aa, received_values)
-    issued_credential = __issue_credential(aa.keypair, item.blind_sign_request.json())
+    issued_credential = __issue_credential(aa.keypair, json.dumps(item.blind_sign_request))
     vc = ValidatedCredentials(
         aaid=aa.authorizable_attribute_id, value=json.dumps(received_values)
     )

@@ -34,10 +34,12 @@ def test_wrong_auth(client):
 
 
 def test_generate_secret_key():
-    key = json.loads(ZenContract(CONTRACTS.GENERATE_KEYPAIR).execute())
-    keys = ["encoding", "zenroom", "sign", "schema", "curve"]
+    contract = json.loads(ZenContract(
+        CONTRACTS.GENERATE_KEYPAIR, {"MadHatter": "issuer_identifier"}
+    ).execute())
+    keys = ["zenroom", "issuer_identifier"]
     for _ in keys:
-        assert key["issuer_identifier"][_]
+        assert contract[_]
 
 
 @pytest.fixture(scope="function")

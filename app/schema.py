@@ -69,7 +69,7 @@ class ValidateAuthorizableAttributeInfoInput(BaseModel):
     authorizable_attribute_id: str
     values: List[AuthorizableAttributeInfoValue]
     optional_values: List[AuthorizableAttributeInfoValue]
-    blind_sign_request: BlindSignatureInput
+    blind_sign_request: Dict
 
 
 class UidOutput(BaseModel):
