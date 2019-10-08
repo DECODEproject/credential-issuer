@@ -44,7 +44,7 @@ def test_generate_secret_key():
 def remove_secret():
     environ[
         "DDDC_CREDENTIAL_ISSUER_CONFIGFILE"
-    ] = "/home/travis/build/DECODEproject/dddc-credential-issuer/app/test.ini"
+    ] = "/home/travis/build/DECODEproject/credential-issuer/app/test.ini"
     bc = BaseConfig()
     secret = Path(bc.get("keypair"))
     if secret.is_file():
@@ -52,6 +52,9 @@ def remove_secret():
 
 
 def test_uid(client):
+    environ[
+        "DDDC_CREDENTIAL_ISSUER_CONFIGFILE"
+    ] = "/home/travis/build/DECODEproject/credential-issuer/app/test.ini"
     config = BaseConfig()
     r = client.get("/uid")
     assert r.json()["credential_issuer_id"]

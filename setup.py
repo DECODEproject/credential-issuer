@@ -16,5 +16,5 @@ setup(
         "pyjwt==1.7.1",
         "sqlalchemy==1.3.5",
     ],
-    tests_require=["pytest", "codecov", "requests", "pytest-cov"],
+    tests_require=["pytest", "pytest-env","codecov", "requests", "pytest-cov"],
 )

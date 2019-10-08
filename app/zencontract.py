@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from zenroom import zenroom
+from zenroom.zenroom import zencode_exec
 
 from app.config.config import BaseConfig
 
@@ -51,7 +51,7 @@ class ZenContract(object):
             log.debug("KEYS: %s" % self._keys)
             log.debug("CODE: \n%s" % self.zencode)
         try:
-            result, errors = zenroom.zencode_exec(
+            result, errors = zencode_exec(
                 script=self.zencode, keys=self._keys, data=self._data
             )
             self._error = str(errors)
