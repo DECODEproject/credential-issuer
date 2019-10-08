@@ -8,7 +8,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "bunch==1.0.1",
-        "fastapi==0.33.0",
+        "fastapi==0.41.0",
         "pytest_runner==4.4",
         "zenroom==1.0.7rc0",
         "pre-commit==1.17.0",
