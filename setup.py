@@ -9,7 +9,7 @@ setup(
     install_requires=[
         "bunch==1.0.1",
         "fastapi==0.52.0",
-        "pytest_runner==5.1",
+        "pytest_runner==5.2",
         "zenroom==1.0.7rc0",
         "pre-commit==2.1.1",
         "python-multipart==0.0.5",
