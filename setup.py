@@ -14,7 +14,7 @@ setup(
         "pre-commit==2.3.0",
         "python-multipart==0.0.5",
         "pyjwt==1.7.1",
-        "sqlalchemy==1.3.13",
+        "sqlalchemy==1.3.16",
     ],
     tests_require=["pytest", "pytest-env","codecov", "requests", "pytest-cov"],
 )
